@@ -1,0 +1,160 @@
+---
+title: "sort-tags: enforce a consistent JSDoc tag order"
+description: "Sorts JSDoc tags into a prescribed sequence, optionally adding blank lines between tag groups and alphabetizing tags not covered by the sequence."
+---
+
+The `sort-tags` rule enforces a consistent ordering of JSDoc tags within a comment block. Tags are arranged according to a configurable sequence, and optional blank lines can be inserted between groups to improve readability. The rule is auto-fixable: it will reorder tags and adjust spacing automatically.
+
+<Note>
+  Unless you disable line-break reporting, this rule conflicts with the `"always"` and `"never"` options of `tag-lines` (which is enabled by default in the recommended config). Use `tag-lines` with `"any"` and the `startLines`/`endLines` options alongside `sort-tags`.
+</Note>
+
+## Rule details
+
+| | |
+|---|---|
+| Recommended | no |
+| Fixable | yes (🔧) |
+| Rule name | `"jsdoc/sort-tags"` |
+
+## Options
+
+<ParamField body="tagSequence" type="object[]">
+  An array of tag group objects. Each object has a `tags` property—an array of tag names. Tags listed earlier in the array are placed first. Tags sharing a group object are treated as peers and will not have lines added between them.
+
+  Use the special pseudo-tag `"-other"` to control placement of tags not explicitly listed. Without it, unlisted tags are grouped at the end.
+
+  Defaults to a comprehensive built-in sequence covering most standard JSDoc and Closure tags, starting with summary and type tags, followed by params, returns, and metadata.
+</ParamField>
+
+<ParamField body="alphabetizeExtras" type="boolean" default="false">
+  When `true`, sorts any tags not covered by `tagSequence` alphabetically. If you want all tags alphabetized, set `tagSequence` to `[]` and enable this option.
+</ParamField>
+
+<ParamField body="linesBetween" type="number" default="1">
+  Number of blank lines to insert between tag groups. Set to `0` for no blank lines between groups. Avoid setting to values that conflict with `tag-lines`.
+</ParamField>
+
+<ParamField body="reportTagGroupSpacing" type="boolean" default="true">
+  Whether to report and fix spacing between tag groups as defined by `linesBetween`. The final tag in a block is not affected. Disable this if you want sorting without automatic line management.
+</ParamField>
+
+<ParamField body="reportIntraTagGroupSpacing" type="boolean" default="true">
+  Whether to report and fix spacing between tags within the same group (removing blank lines between peers). Do not set to `true` if you are using `tag-lines` with `"always"`.
+</ParamField>
+
+<ParamField body="tagExceptions" type="object" default="{}">
+  Per-tag overrides for the maximum number of lines allowed after a tag within a group. Keys are tag names; values are integers. Overrides `linesBetween` for those tags.
+</ParamField>
+
+## Examples
+
+<Tabs>
+  <Tab title="Incorrect">
+    ```js
+    // @returns appears before @param — wrong order
+    /**
+     * @returns {string}
+     * @param b
+     * @param a
+     */
+    function quux () {}
+
+    // Custom sequence: [def, xyz] then [abc] — wrong order
+    /**
+     * @xyz
+     * @def
+     * @abc
+     */
+    function quux () {}
+    // "jsdoc/sort-tags": ["error", {"tagSequence":[{"tags":["def","xyz","abc"]}]}]
+
+    // Groups are not separated by the required blank line
+    /**
+     * @def
+     * @xyz
+     * @abc
+     */
+    function quux () {}
+    // "jsdoc/sort-tags": ["error", {"linesBetween":1,"tagSequence":[{"tags":["def","xyz"]},{"tags":["abc"]}]}]
+    ```
+  </Tab>
+  <Tab title="Correct">
+    ```js
+    // @param before @returns — correct default order
+    /**
+     * @param b
+     * @param a
+     * @returns {string}
+     */
+    function quux () {}
+
+    // Custom sequence respected — def, xyz in first group; abc in second
+    /**
+     * @def
+     * @xyz
+     *
+     * @abc
+     */
+    function quux () {}
+    // "jsdoc/sort-tags": ["error", {"linesBetween":1,"tagSequence":[{"tags":["def","xyz"]},{"tags":["abc"]}]}]
+
+    // alphabetizeExtras: true — unlisted tags sorted alphabetically
+    /**
+     * @abc
+     * @def
+     * @xyz
+     */
+    function quux () {}
+    ```
+  </Tab>
+</Tabs>
+
+### Using `tagExceptions` for per-tag line limits
+
+```js
+// Allow 1 blank line between @example tags, 0 between everything else
+/**
+ * @param b
+ * @param a
+ * @returns {string}
+ * @example abc
+ *
+ * @example def
+ */
+function quux () {}
+// "jsdoc/sort-tags": ["error", {"linesBetween":0,"tagExceptions":{"example":1}}]
+```
+
+## Configuration
+
+```js
+// eslint.config.js
+import jsdoc from "eslint-plugin-jsdoc";
+
+export default [
+  {
+    plugins: { jsdoc },
+    rules: {
+      // Use default tag order with one blank line between groups
+      "jsdoc/sort-tags": ["warn", {
+        linesBetween: 1,
+        reportTagGroupSpacing: true,
+        reportIntraTagGroupSpacing: true,
+      }],
+
+      // Custom order for a specific project style
+      "jsdoc/sort-tags": ["warn", {
+        tagSequence: [
+          { tags: ["since", "access"] },
+          { tags: ["class", "augments", "mixes"] },
+          { tags: ["param"] },
+          { tags: ["returns"] },
+          { tags: ["see", "example"] },
+        ],
+        linesBetween: 1,
+      }],
+    },
+  },
+];
+```

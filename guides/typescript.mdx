@@ -1,0 +1,123 @@
+---
+title: "Using eslint-plugin-jsdoc with TypeScript"
+description: "Set up eslint-plugin-jsdoc for TypeScript. Pick between flat/recommended-typescript, typescript-flavor, or tsdoc presets, and learn which rules change per mode."
+---
+
+`eslint-plugin-jsdoc` ships three TypeScript-oriented preset configs that differ in what kinds of files they target and what JSDoc conventions they enforce. Picking the right one avoids noise from rules that are redundant when TypeScript already carries the type information.
+
+## Three TypeScript modes
+
+### `flat/recommended-typescript`
+
+Use this for source files written in TypeScript (`.ts`, `.tsx`, `.cts`, `.mts`). Because the TypeScript compiler enforces types, rules that require inline JSDoc type annotations are turned off — you document _what_ something does, not _what types_ it uses.
+
+```js
+import jsdoc from 'eslint-plugin-jsdoc';
+
+export default [
+  jsdoc.configs['flat/recommended-typescript'],
+];
+```
+
+Or with the procedural `jsdoc()` factory, which lets you merge extra rules and settings in one call:
+
+```js
+import {jsdoc} from 'eslint-plugin-jsdoc';
+
+export default [
+  jsdoc({
+    config: 'flat/recommended-typescript',
+    rules: {
+      'jsdoc/require-description': 'warn',
+    },
+  }),
+];
+```
+
+Add `-error` to any config name to report issues as errors rather than warnings:
+
+```js
+jsdoc.configs['flat/recommended-typescript-error']
+```
+
+### `flat/recommended-typescript-flavor`
+
+Use this for JavaScript source files (`.js`, `.mjs`, `.cjs`) that adopt TypeScript-style JSDoc annotations — for example, projects that use `allowJs`/`checkJs` in `tsconfig.json`. Type annotation rules remain active because the types live in JSDoc, not in TypeScript syntax.
+
+```js
+import jsdoc from 'eslint-plugin-jsdoc';
+
+export default [
+  jsdoc.configs['flat/recommended-typescript-flavor'],
+];
+```
+
+### `flat/recommended-tsdoc`
+
+Use this when your project generates documentation with [TSDoc](https://tsdoc.org/) or [TypeDoc](https://typedoc.org/). It is identical to `flat/recommended-typescript` with three additional rules turned off — `require-throws-type`, `require-yields-type`, and `require-next-type` — because TSDoc does not support `{Type}` annotations on those tags.
+
+```js
+import jsdoc from 'eslint-plugin-jsdoc';
+
+export default [
+  jsdoc.configs['flat/recommended-tsdoc'],
+];
+```
+
+<Tip>
+For codebases with a mix of `.js` and `.ts` files, use `flat/recommended-mixed`. It automatically applies `flat/recommended-typescript-flavor` to JS files and `flat/recommended-typescript` to TS files based on file extension, so you only need one config entry.
+
+```js
+import jsdoc from 'eslint-plugin-jsdoc';
+
+export default [
+  ...jsdoc.configs['flat/recommended-mixed'],
+];
+```
+</Tip>
+
+## Key differences from the JavaScript config
+
+When you switch from `flat/recommended` to any TypeScript preset, three important changes take effect:
+
+| Rule | `flat/recommended` | `flat/recommended-typescript` |
+|---|---|---|
+| `jsdoc/no-types` | Off | **On** — flags redundant `{Type}` in `@param`/`@returns` |
+| `jsdoc/require-param-type` | On | **Off** — TypeScript provides the type |
+| `jsdoc/require-returns-type` | On | **Off** — TypeScript provides the type |
+
+In `flat/recommended-typescript-flavor`, `require-param-type` and `require-returns-type` stay **on** (types are in JSDoc, not TypeScript syntax) and `no-types` stays **off**.
+
+## TypeScript-specific rules
+
+The following rules are particularly relevant for TypeScript projects. They are not all enabled by default, so you may want to opt into them explicitly.
+
+- [`jsdoc/no-types`](/rules/no-types) — reports inline JSDoc types that are redundant when using TypeScript syntax
+- [`jsdoc/no-undefined-types`](/rules/no-undefined-types) — prohibits types not declared as globals or within `@typedef` (off in the TypeScript presets since TypeScript handles this)
+- [`jsdoc/ts-prefer-function-type`](/rules/ts-prefer-function-type) — prefers function types over call signatures when there are no other properties (autofixable)
+- [`jsdoc/ts-method-signature-style`](/rules/ts-method-signature-style) — enforces either function properties or method signatures (autofixable)
+- [`jsdoc/ts-no-empty-object-type`](/rules/ts-no-empty-object-type) — warns against use of the empty object type `{}`
+- [`jsdoc/type-formatting`](/rules/type-formatting) — formats JSDoc type values consistently (autofixable)
+
+## Using the TypeScript ESLint parser
+
+If you also use `typescript-eslint` for TypeScript-aware linting, configure the parser alongside the JSDoc preset so both plugins share the same AST:
+
+```js
+import jsdoc from 'eslint-plugin-jsdoc';
+import tseslint from 'typescript-eslint';
+
+export default tseslint.config(
+  ...tseslint.configs.recommended,
+  jsdoc.configs['flat/recommended-typescript'],
+  {
+    files: ['**/*.{ts,tsx}'],
+    rules: {
+      // override or add rules here
+      'jsdoc/require-description': 'warn',
+    },
+  },
+);
+```
+
+The JSDoc and TypeScript ESLint rules are independent — enabling both gives you type-safety enforcement from `typescript-eslint` and documentation quality enforcement from `eslint-plugin-jsdoc`.

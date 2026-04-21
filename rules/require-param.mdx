@@ -1,0 +1,177 @@
+---
+title: "require-param: enforce @param tags for function parameters"
+description: "Require a @param tag for every function parameter. Catches undocumented destructured objects, rest elements, and nested properties. Recommended and autofixable."
+---
+
+The `require-param` rule checks that each parameter in a function signature has a matching `@param` (or `@arg` / `@argument`) tag in the JSDoc block. This includes regular parameters, destructured parameters, rest parameters, and nested destructured properties.
+
+## Rule details
+
+| | |
+|---|---|
+| Recommended | ✓ |
+| Fixable | 🔧 (inserts missing `@param` tags) |
+| Rule name | `"jsdoc/require-param"` |
+| Tag aliases | `@arg`, `@argument` |
+
+The fixer inserts a `@param <name>` entry for each missing parameter. For unnamed destructured parameters, it auto-generates root names like `root0`, `root1`, etc. (configurable with `unnamedRootBase`).
+
+## Options
+
+### `checkDestructuredRoots`
+
+Whether to require a `@param` tag for the root object of a destructured parameter. For example, given `function fn({a, b}) {}`, this controls whether a tag for the `{a, b}` object itself is required. When `false`, checking of the inner properties is also skipped. Defaults to `true`.
+
+### `checkDestructured`
+
+Whether to require tags for the individual properties inside a destructured parameter. Only takes effect if `checkDestructuredRoots` is `true`. Defaults to `true`.
+
+### `checkRestProperty`
+
+Whether to require a `@param` tag for rest properties in destructured parameters (e.g., `...extra` in `{ num, ...extra }`). Defaults to `false`.
+
+### `enableFixer`
+
+Whether to enable the automatic fixer. Defaults to `true`.
+
+### `enableRestElementFixer`
+
+Whether to allow the fixer to insert repeatable parameter syntax (`...`) for rest elements in array destructuring. Defaults to `true`.
+
+### `enableRootFixer`
+
+Whether to allow the fixer to auto-insert and auto-increment root names for unnamed destructured parameters. Defaults to `true`.
+
+### `checkTypesPattern`
+
+A regular expression string that controls which `@param` type annotations require their destructured properties to also be documented. Defaults to `/^(?:[oO]bject|[aA]rray|PlainObject|Generic(?:Object|Array))$/v`. Types that do not match this pattern (e.g., `{SVGRect}`) are assumed to be fully described by the type reference and do not require destructured property documentation.
+
+### `contexts`
+
+An array of AST node type strings (or objects with `context` and `comment` properties) where the rule should apply. Overrides the default contexts (`ArrowFunctionExpression`, `FunctionDeclaration`, `FunctionExpression`). Useful for TypeScript constructs like `TSMethodSignature` and `TSFunctionType`.
+
+### `exemptedBy`
+
+Array of tag names whose presence on a JSDoc block exempts the function from this rule. Defaults to `["inheritdoc"]`.
+
+### `checkConstructors`
+
+Whether to check constructors for `@param` coverage. Defaults to `true`.
+
+### `checkGetters`
+
+Whether to check getter methods for `@param` coverage. Defaults to `false`.
+
+### `checkSetters`
+
+Whether to check setter methods for `@param` coverage. Defaults to `false`.
+
+### `ignoreWhenAllParamsMissing`
+
+When `true`, does not report when all parameters in a function are undocumented (only reports when some are missing). Defaults to `false`.
+
+### `interfaceExemptsParamsCheck`
+
+When `true`, TypeScript interface-typed function parameters exempt the function from param checks. Defaults to `false`.
+
+### `unnamedRootBase`
+
+An array of root names to use when auto-naming destructured parameters. Cycles through the array before switching to numeric suffixes. Defaults to `["root"]`.
+
+For example, with `unnamedRootBase: ["arg", "config"]`, three destructured params would get names `arg`, `config0`, `config1`.
+
+### `autoIncrementBase`
+
+The starting number for auto-incrementing unnamed roots. Defaults to `0`.
+
+### `useDefaultObjectProperties`
+
+When `true`, also checks that properties from default value objects are documented. Defaults to `false`.
+
+## Examples
+
+<Tabs>
+  <Tab title="Incorrect">
+    ```javascript
+    /**
+     *
+     */
+    function greetUser(name, options) {
+      // name and options are undocumented
+    }
+    // Message: Missing JSDoc @param "name" declaration.
+
+    /**
+     * @param options
+     */
+    function configure({ host, port, ...rest }) {
+      // options.host and options.port are undocumented
+    }
+    // Message: Missing JSDoc @param "options.host" declaration.
+
+    /**
+     * @param cfg
+     * @param cfg.num
+     */
+    function withRest({ num, ...extra }) {}
+    // "jsdoc/require-param": ["error", { "checkRestProperty": true }]
+    // Message: Missing JSDoc @param "cfg.extra" declaration.
+    ```
+  </Tab>
+  <Tab title="Correct">
+    ```javascript
+    /**
+     * Greets a user with optional settings.
+     * @param {string} name - The user's display name.
+     * @param {object} options - Configuration options.
+     * @param {boolean} [options.formal] - Whether to use formal greeting.
+     */
+    function greetUser(name, options) {}
+
+    /**
+     * Configures the server.
+     * @param {object} options - Server options.
+     * @param {string} options.host - Hostname.
+     * @param {number} options.port - Port number.
+     */
+    function configure({ host, port }) {}
+
+    /**
+     * @inheritdoc
+     */
+    function overriddenMethod(foo) {}
+    ```
+  </Tab>
+</Tabs>
+
+## Configuration example
+
+```javascript
+// eslint.config.js
+import jsdoc from "eslint-plugin-jsdoc";
+
+export default [
+  {
+    plugins: { jsdoc },
+    rules: {
+      "jsdoc/require-param": [
+        "error",
+        {
+          checkDestructuredRoots: true,
+          checkDestructured: true,
+          checkRestProperty: false,
+          enableFixer: true,
+          exemptedBy: ["inheritdoc", "type"],
+          checkConstructors: true,
+          checkGetters: false,
+          checkSetters: false,
+        },
+      ],
+    },
+  },
+];
+```
+
+<Note>
+  When `checkDestructuredRoots` is `false`, the rule also skips checking the inner properties of destructured parameters, making it equivalent to disabling `checkDestructured` as well.
+</Note>

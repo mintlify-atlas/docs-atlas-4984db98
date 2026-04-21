@@ -1,0 +1,95 @@
+---
+title: 'no-types: disallow types on @param and @returns'
+description: 'Removes redundant type annotations from @param and @returns tags when TypeScript already provides that information through static typing.'
+keywords: ['eslint', 'jsdoc', 'no-types', 'typescript', 'param', 'returns']
+---
+
+When you use TypeScript, the types of function parameters and return values are already expressed in the function signature. Adding `{type}` annotations to `@param` and `@returns` JSDoc tags duplicates that information and can become inconsistent when types change.
+
+This rule reports—and can automatically remove—type annotations on `@param` and `@returns` tags. When you configure `contexts`, it also strips types from `@property` tags on class declarations.
+
+## Rule details
+
+| | |
+|---|---|
+| Rule name | `jsdoc/no-types` |
+| Recommended | No (enabled in `flat/recommended-typescript`) |
+| Fixable | Yes — strips type annotations automatically |
+| Tags | `@param`, `@arg`, `@argument`, `@returns`, `@return` |
+| Default contexts | `ArrowFunctionExpression`, `FunctionDeclaration`, `FunctionExpression`, `TSDeclareFunction`, `TSMethodSignature`, `ClassDeclaration` |
+
+## Options
+
+<ParamField path="contexts" type="array">
+  An array of strings (AST node types) or objects with optional `context` and `comment` properties that control where the rule applies.
+
+  Defaults to the standard function contexts listed above. Set to `"any"` to apply the rule to every JSDoc block in the file, which is necessary for `@callback` and `@function` blocks not attached to a function declaration.
+
+  See the [AST and Selectors](https://github.com/gajus/eslint-plugin-jsdoc#advanced-ast-and-selectors) section of the advanced docs for the expected format.
+</ParamField>
+
+## Examples
+
+<Tabs>
+  <Tab title="Incorrect">
+    ```ts
+    /**
+     * @param {number} foo
+     */
+    function quux(foo) {}
+
+    /**
+     * @returns {number}
+     */
+    function quux() {}
+
+    /**
+     * @class
+     * @property {object} x
+     */
+    class Example {
+      x: number;
+    }
+    ```
+  </Tab>
+  <Tab title="Correct">
+    ```ts
+    /**
+     * @param foo
+     */
+    function quux(foo) {}
+
+    /**
+     * @returns
+     */
+    function quux() {}
+
+    // With contexts: ["any"] — @function and @callback blocks are not checked
+    // unless contexts is set to "any"
+    /**
+     * @function
+     * @param {number} foo
+     */
+    ```
+  </Tab>
+</Tabs>
+
+## Configuration
+
+```json
+{
+  "jsdoc/no-types": "warn"
+}
+```
+
+To also check `@callback` and `@function` blocks that are not attached to a function:
+
+```json
+{
+  "jsdoc/no-types": ["warn", { "contexts": ["any"] }]
+}
+```
+
+<Note>
+  This rule is enabled in `flat/recommended-typescript` and `recommended-typescript` preset configs, where TypeScript provides type information. It is **disabled** in `flat/recommended-typescript-flavor`, which is intended for JSDoc-flavored TypeScript where type annotations in JSDoc are still desirable.
+</Note>

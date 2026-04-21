@@ -1,0 +1,116 @@
+---
+title: "no-multi-asterisks: prevent extra asterisks in JSDoc blocks"
+description: "Prevents the use of multiple consecutive asterisks on middle lines or at the end of JSDoc blocks, keeping comment delimiters clean and consistent."
+---
+
+The `no-multi-asterisks` rule prevents stray or extra asterisks from appearing inside JSDoc block comments—both on continuation lines (`**`) and on the closing line (`**/`). These are often accidental and can confuse tooling or readers.
+
+<Note>
+  This rule targets asterisks inside a JSDoc block. To catch double asterisks at the very start of a comment (`/**`), use the `no-bad-blocks` rule instead—those are not proper JSDoc and require different handling.
+</Note>
+
+## Rule details
+
+| | |
+|---|---|
+| Recommended | yes |
+| Fixable | yes (🔧) |
+| Rule name | `"jsdoc/no-multi-asterisks"` |
+
+The fixer removes the extra asterisks on affected middle or end lines.
+
+## Options
+
+<ParamField body="preventAtMiddleLines" type="boolean" default="true">
+  Prevents multiple consecutive asterisks on continuation lines inside the block. For example, a line like ` **` (a bare double asterisk) would be reported.
+</ParamField>
+
+<ParamField body="preventAtEnd" type="boolean" default="true">
+  Prevents multiple asterisks on the closing line of the block (e.g., `**/` instead of `*/`).
+</ParamField>
+
+<ParamField body="allowWhitespace" type="boolean" default="false">
+  When `true`, allows an asterisk that is preceded by whitespace. This is useful when writing Markdown inside JSDoc—for example, `* *bold*` or bullet lists using `* * item`. Without this option, those patterns are reported.
+</ParamField>
+
+## Examples
+
+<Tabs>
+  <Tab title="Incorrect">
+    ```js
+    // preventAtMiddleLines: true (default) — double asterisk on a middle line
+    /**
+     *
+     **
+     */
+
+    // preventAtEnd: true (default) — double asterisk on the closing line
+    /**
+     * Desc.
+     *
+     **/
+
+    // allowWhitespace: false (default) — asterisk after whitespace on middle line
+    /**
+     * The method does 2 things:
+     * * Thing 1
+     * * Thing 2
+     */
+    ```
+  </Tab>
+  <Tab title="Correct">
+    ```js
+    // Standard JSDoc block — no extra asterisks
+    /**
+     * Desc.
+     *
+     */
+
+    // Markdown bold — allowed because asterisks are inside description text
+    /**
+     * **Bold** statement.
+     */
+
+    // allowWhitespace: true — asterisk after space is permitted
+    /**
+     * The method does 2 things:
+     * * Thing 1
+     * * Thing 2
+     */
+
+    // preventAtMiddleLines: false — bare double asterisk on a middle line allowed
+    /**
+     **
+     *
+     */
+    ```
+  </Tab>
+</Tabs>
+
+## Configuration
+
+```js
+// eslint.config.js
+import jsdoc from "eslint-plugin-jsdoc";
+
+export default [
+  {
+    plugins: { jsdoc },
+    rules: {
+      // Default — prevent extra asterisks everywhere
+      "jsdoc/no-multi-asterisks": "warn",
+
+      // Allow Markdown bullets and inline bold syntax
+      "jsdoc/no-multi-asterisks": ["warn", {
+        allowWhitespace: true,
+      }],
+
+      // Allow double asterisk on closing line only
+      "jsdoc/no-multi-asterisks": ["warn", {
+        preventAtMiddleLines: true,
+        preventAtEnd: false,
+      }],
+    },
+  },
+];
+```

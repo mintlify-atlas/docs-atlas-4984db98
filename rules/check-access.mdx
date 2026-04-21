@@ -1,0 +1,129 @@
+---
+title: "check-access: validate @access tag values"
+description: "Validates that @access tags use only allowed values and prevents mixing @access with specific access-control tags on the same JSDoc block."
+keywords: ["eslint", "jsdoc", "check-access", "access control", "visibility"]
+---
+
+The `check-access` rule validates that `@access` tags use only one of the four permitted values—`package`, `private`, `protected`, or `public`—and prevents inconsistent use of access-control tags within the same JSDoc block.
+
+## Rule details
+
+| | |
+|---|---|
+| Recommended | ✓ |
+| Fixable | No |
+| Rule name | `"jsdoc/check-access"` |
+
+This rule reports the following problems:
+
+- An `@access` tag with a value other than `package`, `private`, `protected`, or `public`
+- An `@access` tag used alongside `@public`, `@private`, `@protected`, or `@package` on the same block
+- Multiple `@access` tags (or multiple specific access-control tags) on the same block
+
+## Options
+
+This rule has no options.
+
+## Examples
+
+<Tabs>
+  <Tab title="Incorrect">
+```javascript
+/**
+ * @access foo
+ */
+function quux(foo) {}
+// Message: Missing valid JSDoc @access level.
+
+/**
+ * @access public
+ * @public
+ */
+function quux(foo) {}
+// Message: The @access tag may not be used with specific access-control tags
+//          (@package, @private, @protected, or @public).
+
+/**
+ * @access public
+ * @access private
+ */
+function quux(foo) {}
+// Message: At most one access-control tag may be present on a JSDoc block.
+
+/**
+ * @public
+ * @private
+ */
+function quux(foo) {}
+// Message: At most one access-control tag may be present on a JSDoc block.
+```
+  </Tab>
+  <Tab title="Correct">
+```javascript
+/**
+ * @access public
+ */
+function quux(foo) {}
+
+/**
+ * @access private
+ */
+function quux(foo) {}
+
+/**
+ * @access protected
+ */
+function quux(foo) {}
+
+/**
+ * @access package
+ */
+function quux(foo) {}
+
+/**
+ * @public
+ */
+function quux(foo) {}
+
+class MyClass {
+  /**
+   * @access private
+   */
+  myClassField = 1;
+}
+```
+  </Tab>
+</Tabs>
+
+### Using tag name preferences
+
+If you rename the `@access` tag via `settings.jsdoc.tagNamePreference`, the rule adapts accordingly:
+
+```javascript
+/**
+ * @accessLevel package
+ */
+function quux(foo) {}
+// Settings: { "jsdoc": { "tagNamePreference": { "access": "accessLevel" } } }
+// Valid: uses the renamed tag with a correct value.
+```
+
+## Configuration
+
+```javascript
+// eslint.config.js
+import jsdoc from 'eslint-plugin-jsdoc';
+
+export default [
+  {
+    plugins: { jsdoc },
+    rules: {
+      'jsdoc/check-access': 'warn',
+    },
+  },
+];
+```
+
+<Note>
+This rule is included in `jsdoc.configs['flat/recommended']` and reports at the `warn` level by default.
+</Note>

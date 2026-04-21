@@ -1,0 +1,162 @@
+---
+title: "check-line-alignment: enforce JSDoc tag column alignment"
+description: "Reports invalid spacing between JSDoc tag components — tag, type, name, description. Enforces column alignment or single-space separation. Autofixable."
+---
+
+The `check-line-alignment` rule validates spacing between the parts of JSDoc tag lines (tag, type, name, and description). When set to `"always"`, tag components across lines must be aligned to the same columns. When set to `"never"`, only a single space is permitted between each component. This is the style recommended by the [WordPress inline documentation standards](https://make.wordpress.org/core/handbook/best-practices/inline-documentation-standards/javascript/#aligning-comments), among others.
+
+## Rule details
+
+| | |
+|---|---|
+| Recommended | no |
+| Fixable | yes (🔧) |
+| Rule name | `"jsdoc/check-line-alignment"` |
+
+The fixer adds or removes spacing between tag components to meet the configured alignment requirement.
+
+## Options
+
+The first option is a string:
+
+- `"never"` (default) — each tag component is separated by a single space; extra spaces are reported
+- `"always"` — tag components are aligned across all tags in the block
+- `"any"` — no alignment enforcement; only `wrapIndent` is checked when set
+
+The second option is an object:
+
+<ParamField body="tags" type="string[]" default='["param", "arg", "argument", "property", "prop", "returns", "return", "template"]'>
+  The tags to which alignment rules are applied. Add or replace tags to extend or narrow the set being checked.
+</ParamField>
+
+<ParamField body="customSpacings" type="object">
+  Fine-grained control over the number of spaces required at specific positions. Each key defaults to `1`. Available keys:
+
+  - `postDelimiter` — spaces after the `*` delimiter (e.g., `*   @param`)
+  - `postTag` — spaces after the tag name (e.g., `@param  `)
+  - `postType` — spaces after the type (e.g., `{string}   `)
+  - `postName` — spaces after the parameter name (e.g., `name   `)
+  - `postHyphen` — spaces after a hyphen separator in the description (e.g., `name -  desc`)
+</ParamField>
+
+<ParamField body="wrapIndent" type="string" default='""'>
+  The indentation string applied to continuation lines of a tag description (lines after the first). Defaults to an empty string (no indent).
+</ParamField>
+
+<ParamField body="disableWrapIndent" type="boolean" default="false">
+  When `true`, existing wrap indentation is preserved as-is without any reporting or modification, even if `wrapIndent` is also set.
+</ParamField>
+
+<ParamField body="preserveMainDescriptionPostDelimiter" type="boolean" default="false">
+  When `true`, preserves any extra spacing after the `*` delimiter in the main description lines rather than normalizing it to a single space.
+</ParamField>
+
+## Examples
+
+<Tabs>
+  <Tab title="Incorrect">
+    ```js
+    // "always" — params are not aligned
+    /**
+     * Function description.
+     *
+     * @param {string} lorem Description.
+     * @param {int} sit Description multi words.
+     */
+    const fn = (lorem, sit) => {}
+
+    // "never" — extra spaces present between components
+    /**
+     * My function.
+     *
+     * @param {string} lorem  Description.
+     * @param {int}    sit    Description multi words.
+     */
+    const fn = (lorem, sit) => {}
+    ```
+  </Tab>
+  <Tab title="Correct">
+    ```js
+    // "always" — all components aligned across tags
+    /**
+     * Function description.
+     *
+     * @param {string} lorem Description.
+     * @param {int}    sit   Description multi words.
+     */
+    const fn = (lorem, sit) => {}
+
+    // "never" — exactly one space between each component
+    /**
+     * My function.
+     *
+     * @param {string} lorem Description.
+     * @param {int} sit Description multi words.
+     */
+    const fn = (lorem, sit) => {}
+    ```
+  </Tab>
+</Tabs>
+
+### Using `wrapIndent` for multi-line descriptions
+
+```js
+// "never" with wrapIndent: "  " — continuation lines must be indented by 2 spaces
+// ✅
+/**
+ * @param {string} lorem Description
+ *   with multiple lines.
+ */
+
+// ❌ No indent on the continuation line
+/**
+ * @param {string} lorem Description
+ * with multiple lines.
+ */
+```
+
+### Using `customSpacings`
+
+```js
+// "always" with custom spacing — 2 spaces after delimiter, 3 after tag, 2 after type
+/**
+ *  @param    {string}  lorem Description.
+ *  @param    {int}     sit   Description multi words.
+ *
+ *  @return   {string}        Return description.
+ */
+```
+
+## Configuration
+
+```js
+// eslint.config.js
+import jsdoc from "eslint-plugin-jsdoc";
+
+export default [
+  {
+    plugins: { jsdoc },
+    rules: {
+      // Prevent alignment (single space only)
+      "jsdoc/check-line-alignment": ["warn", "never"],
+
+      // Require column alignment
+      "jsdoc/check-line-alignment": ["warn", "always"],
+
+      // Require alignment with 2-space wrap indent for multi-line descriptions
+      "jsdoc/check-line-alignment": ["warn", "always", {
+        wrapIndent: "  ",
+      }],
+
+      // Custom spacings
+      "jsdoc/check-line-alignment": ["warn", "always", {
+        customSpacings: {
+          postDelimiter: 2,
+          postTag: 3,
+          postType: 2,
+        },
+      }],
+    },
+  },
+];
+```

@@ -1,0 +1,191 @@
+---
+title: "Preset configurations for eslint-plugin-jsdoc"
+description: "All eslint-plugin-jsdoc preset configs: recommended variants for JS, TypeScript, TSDoc, and mixed projects, plus granular rule subsets."
+---
+
+`eslint-plugin-jsdoc` ships a set of preset configurations so you can get a useful rule baseline without enabling every rule manually. Each preset activates a curated subset of rules that are appropriate for a given project type. All presets come in a `warn` variant and an `-error` variant that reports violations as failing errors instead of warnings.
+
+## Main presets
+
+<AccordionGroup>
+  <Accordion title="flat/recommended">
+    The general-purpose starting point for JavaScript projects. Enforces proper tag values, that common tags exist, and that tags are formatted and styled consistently.
+
+    ```js
+    import jsdoc from 'eslint-plugin-jsdoc';
+
+    export default [jsdoc.configs['flat/recommended']];
+    ```
+
+    | Variant | Severity |
+    |---------|----------|
+    | `flat/recommended` | warn |
+    | `flat/recommended-error` | error |
+  </Accordion>
+  <Accordion title="flat/recommended-typescript">
+    Like `flat/recommended`, but adjusted for projects using TypeScript syntax (`.ts`, `.tsx` files). Adds `jsdoc/no-types` to disallow type annotations in JSDoc since types are expressed in TypeScript directly. Disables `no-undefined-types`, `require-param-type`, `require-property-type`, and `require-returns-type` as these are redundant with TypeScript.
+
+    ```js
+    import jsdoc from 'eslint-plugin-jsdoc';
+
+    export default [jsdoc.configs['flat/recommended-typescript']];
+    ```
+
+    | Variant | Severity |
+    |---------|----------|
+    | `flat/recommended-typescript` | warn |
+    | `flat/recommended-typescript-error` | error |
+  </Accordion>
+  <Accordion title="flat/recommended-typescript-flavor">
+    For projects using JavaScript syntax (`.js` source files) but writing TypeScript-style JSDoc types — the default `"typescript"` mode in `eslint-plugin-jsdoc`. Keeps type annotations in JSDoc but disables `no-undefined-types`.
+
+    ```js
+    import jsdoc from 'eslint-plugin-jsdoc';
+
+    export default [jsdoc.configs['flat/recommended-typescript-flavor']];
+    ```
+
+    | Variant | Severity |
+    |---------|----------|
+    | `flat/recommended-typescript-flavor` | warn |
+    | `flat/recommended-typescript-flavor-error` | error |
+  </Accordion>
+  <Accordion title="flat/recommended-tsdoc">
+    Like `flat/recommended-typescript`, but additionally turns off `require-throws-type`, `require-yields-type`, and `require-next-type`. Use this when writing [TSDoc](https://tsdoc.org/) comments, for example with [TypeDoc](https://typedoc.org/), since TSDoc does not support `{Type}` annotations on those tags.
+
+    ```js
+    import jsdoc from 'eslint-plugin-jsdoc';
+
+    export default [jsdoc.configs['flat/recommended-tsdoc']];
+    ```
+
+    | Variant | Severity |
+    |---------|----------|
+    | `flat/recommended-tsdoc` | warn |
+    | `flat/recommended-tsdoc-error` | error |
+  </Accordion>
+  <Accordion title="flat/recommended-mixed">
+    A combination preset that automatically applies the right config based on file extension. JavaScript files (`**/*.{js,jsx,cjs,mjs}`) receive `flat/recommended-typescript-flavor` and TypeScript files (`**/*.{ts,tsx,cts,mts}`) receive `flat/recommended-typescript`. This is an array config — use it with spread syntax or include it as-is:
+
+    ```js
+    import jsdoc from 'eslint-plugin-jsdoc';
+
+    export default [
+      ...jsdoc.configs['flat/recommended-mixed'],
+    ];
+    ```
+
+    <Note>
+    `flat/recommended-mixed` returns an array of two config objects, so `files` and `ignores` passed via the `jsdoc()` factory will not apply. Use the declarative approach shown above.
+    </Note>
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Granular configs
+
+In addition to the all-in-one recommended presets, there are four standalone rule group configs. Each group covers a specific concern and only enables rules relevant to that concern. This lets you mix and match exactly the enforcement you want without pulling in rules you don't need.
+
+All granular configs are TypeScript-aware and come in `-typescript` (for `.ts` files) and `-typescript-flavor` (for `.js` files with JSDoc types) variants.
+
+| Group | What it checks | Config prefix |
+|-------|---------------|---------------|
+| **Contents** | Names and descriptions in doc blocks | `flat/contents-typescript` |
+| **Logical** | Proper tag values and type correctness | `flat/logical-typescript` |
+| **Requirements** | Whether required tags exist | `flat/requirements-typescript` |
+| **Stylistic** | Formatting and visual consistency | `flat/stylistic-typescript` |
+
+### Contents rules
+
+Checks that names and descriptions in JSDoc are informative and well-formed.
+
+Rules included: `informative-docs`, `match-description`, `no-blank-block-descriptions`, `no-blank-blocks`, `text-escaping` (HTML escaping enabled).
+
+| Config | Variant | Severity |
+|--------|---------|----------|
+| `flat/contents-typescript` | TypeScript files | warn |
+| `flat/contents-typescript-error` | TypeScript files | error |
+| `flat/contents-typescript-flavor` | JS files with JSDoc types | warn |
+| `flat/contents-typescript-flavor-error` | JS files with JSDoc types | error |
+
+### Logical rules
+
+Checks that tag values are valid and internally consistent.
+
+Rules included: `check-access`, `check-param-names`, `check-property-names`, `check-syntax`, `check-tag-names`, `check-template-names`, `check-types`, `check-values`, `empty-tags`, `escape-inline-tags`, `implements-on-classes`, `require-returns-check`, `require-yields-check`, `no-bad-blocks`, `no-defaults`, `no-types`, `no-undefined-types`, `valid-types`.
+
+| Config | Variant | Severity |
+|--------|---------|----------|
+| `flat/logical-typescript` | TypeScript files | warn |
+| `flat/logical-typescript-error` | TypeScript files | error |
+| `flat/logical-typescript-flavor` | JS files with JSDoc types | warn |
+| `flat/logical-typescript-flavor-error` | JS files with JSDoc types | error |
+
+### Requirements rules
+
+Enforces that required tags are present on documented code.
+
+Rules included: `require-example`, `require-jsdoc`, `require-next-type`, `require-param`, `require-param-description`, `require-param-name`, `require-property`, `require-property-description`, `require-property-name`, `require-returns`, `require-returns-description`, `require-throws-type`, `require-yields`, `require-yields-type`.
+
+The `-typescript-flavor` variant additionally requires: `require-param-type`, `require-property-type`, `require-returns-type`, `require-template`.
+
+| Config | Variant | Severity |
+|--------|---------|----------|
+| `flat/requirements-typescript` | TypeScript files | warn |
+| `flat/requirements-typescript-error` | TypeScript files | error |
+| `flat/requirements-typescript-flavor` | JS files with JSDoc types | warn |
+| `flat/requirements-typescript-flavor-error` | JS files with JSDoc types | error |
+
+### Stylistic rules
+
+Enforces consistent formatting and visual style of JSDoc blocks.
+
+Rules included: `check-alignment`, `check-line-alignment`, `lines-before-block`, `multiline-blocks`, `no-multi-asterisks`, `require-asterisk-prefix`, `require-hyphen-before-param-description` (set to `'never'`), `tag-lines`.
+
+| Config | Variant | Severity |
+|--------|---------|----------|
+| `flat/stylistic-typescript` | TypeScript files | warn |
+| `flat/stylistic-typescript-error` | TypeScript files | error |
+| `flat/stylistic-typescript-flavor` | JS files with JSDoc types | warn |
+| `flat/stylistic-typescript-flavor-error` | JS files with JSDoc types | error |
+
+---
+
+## Combining granular configs
+
+To enforce only that JSDoc tags are valid and consistently formatted in TypeScript files — without requiring that tags must always exist — combine the `contents`, `logical`, and `stylistic` groups and omit `requirements`:
+
+```js
+import jsdoc from 'eslint-plugin-jsdoc';
+
+export default [
+  jsdoc.configs['flat/contents-typescript-error'],
+  jsdoc.configs['flat/logical-typescript-error'],
+  jsdoc.configs['flat/stylistic-typescript-error'],
+];
+```
+
+---
+
+## Why certain rules are excluded from granular configs
+
+Some rules were intentionally left out of the granular configs:
+
+**Requirements group** — rules omitted and why:
+- `require-throws` — Cannot enforce all cases; some projects may not want it
+- `require-file-overview` — Too demanding for all projects
+- `convert-to-jsdoc-comments` — Overly aggressive for some projects
+
+**Logical group** — rules omitted and why:
+- `no-missing-syntax` — Has no default options; requires project-specific configuration
+- `no-restricted-syntax` — Has no default options; requires project-specific configuration
+
+**Contents group** — rules omitted and why:
+- `match-name` — Has no default options
+- `require-description` — Too demanding for all projects
+- `require-description-complete-sentence` — Too demanding for all projects
+
+**Stylistic group** — rules omitted and why:
+- `check-indentation` — May not be desired by all projects
+- `sort-tags` — Too project-specific

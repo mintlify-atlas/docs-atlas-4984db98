@@ -1,0 +1,53 @@
+---
+title: "What is eslint-plugin-jsdoc?"
+description: "eslint-plugin-jsdoc enforces JSDoc comment quality with 66+ ESLint rules for JavaScript and TypeScript, from tag validation to completeness checks."
+---
+
+eslint-plugin-jsdoc is a plugin for ESLint that lints JSDoc comments in JavaScript and TypeScript codebases. It provides over 66 rules that catch invalid tags, missing documentation, incorrect formatting, and type inconsistencies — helping teams keep their JSDoc comments accurate and consistent.
+
+## Key features
+
+<CardGroup cols={2}>
+  <Card title="Tag validation" icon="tag">
+    Catch invalid or misspelled JSDoc tags, disallow unsupported syntax, and enforce preferred type names with rules like `check-tag-names` and `check-types`.
+  </Card>
+  <Card title="Formatting rules" icon="paintbrush">
+    Enforce consistent comment style: alignment, multiline vs. single-line blocks, asterisk usage, tag ordering, and whitespace with rules like `multiline-blocks` and `tag-lines`.
+  </Card>
+  <Card title="Completeness checks" icon="circle-check">
+    Require that all parameters, return values, thrown errors, and yields are documented. Rules like `require-param`, `require-returns`, and `require-throws` prevent missing documentation.
+  </Card>
+  <Card title="TypeScript support" icon="code">
+    Purpose-built presets for TypeScript syntax automatically disable redundant rules (like `require-param-type`) and enable TypeScript-aware rules such as `no-types` and `ts-prefer-function-type`.
+  </Card>
+  <Card title="Preset configs" icon="sliders">
+    Start quickly with `flat/recommended`, `flat/recommended-typescript`, `flat/recommended-tsdoc`, or mixed-mode configs. Each preset can report as warnings or hard errors.
+  </Card>
+  <Card title="Autofix support" icon="wrench">
+    Many rules include an autofix: run `eslint --fix` to automatically correct alignment, remove redundant types, reorder tags, and more.
+  </Card>
+</CardGroup>
+
+## Supported environments
+
+eslint-plugin-jsdoc works with:
+
+- **ESLint**: versions 7, 8, 9, and 10 (flat config fully supported in ESLint 9+)
+- **Node.js**: `^20.19.0`, `^22.13.0`, or `>=24`
+- **Languages**: JavaScript (`.js`, `.mjs`, `.cjs`) and TypeScript (`.ts`, `.tsx`)
+- **Config styles**: Flat config (`eslint.config.js`) and legacy `eslintrc`
+
+## Open source
+
+eslint-plugin-jsdoc is released under the **BSD-3-Clause** license and maintained on [GitHub](https://github.com/gajus/eslint-plugin-jsdoc).
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/installation">
+    Install the plugin and set up your environment.
+  </Card>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Get linting JSDoc comments in under 5 minutes.
+  </Card>
+</CardGroup>

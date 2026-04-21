@@ -1,0 +1,141 @@
+---
+title: "require-yields: enforce @yields tags on generator functions"
+description: "Require a @yields tag on generator functions with yield expressions. Covers async generators, @next for yield-return values, and @generator tag detection."
+---
+
+The `require-yields` rule checks that generator functions containing a `yield` expression with a non-`undefined` value have a `@yields` (or `@yield`) tag in their JSDoc block. It will also report if a generator has multiple `@yields` tags.
+
+The rule also supports documenting the value passed _back into_ the generator via `it.next(value)` using the non-standard `@next` tag (see the `next` option).
+
+## Rule details
+
+| | |
+|---|---|
+| Recommended | ✓ |
+| Fixable | No |
+| Rule name | `"jsdoc/require-yields"` |
+| Tag aliases | `@yield` |
+
+## Options
+
+### `forceRequireYields`
+
+When `true`, always requires a `@yields` tag on generator functions even if all `yield` statements are expressionless (`yield;` with no value). Defaults to `false`.
+
+### `withGeneratorTag`
+
+When `true` and a `@generator` tag is present on the block, requires a `@yields` tag. Defaults to `true`. Use the `contexts` option set to `"any"` to detect `@generator` on `@callback` or `@function` blocks not directly attached to a generator function.
+
+### `next`
+
+When `true`, any `yield` whose return value is used (e.g., `const rv = yield value;`) requires an additional `@next` tag documenting the expected value passed into `it.next()`. Defaults to `false`.
+
+### `nextWithGeneratorTag`
+
+When `true` and a `@generator` tag is present, requires both `@yields` and `@next`. Defaults to `false`.
+
+### `forceRequireNext`
+
+When `true`, always requires a `@next` tag even if no yield return value is captured. Defaults to `false`.
+
+### `contexts`
+
+An array of AST context strings (or objects with `context` and `comment` properties) where the rule should apply. Overrides the default contexts (`FunctionDeclaration`, `FunctionExpression`). Set to `"any"` to apply to any JSDoc block.
+
+### `exemptedBy`
+
+Array of tag names whose presence exempts the block from this rule. Defaults to `["inheritdoc"]`.
+
+## Examples
+
+<Tabs>
+  <Tab title="Incorrect">
+    ```javascript
+    /**
+     *
+     */
+    function* generateSequence(start) {
+      yield start;
+      yield start + 1;
+    }
+    // Message: Missing JSDoc @yields declaration.
+
+    /**
+     * @yields
+     */
+    function* stateMachine(input) {
+      const response = yield input;
+      // response is used, so @next is required
+    }
+    // "jsdoc/require-yields": ["error", { "next": true }]
+    // Message: Missing JSDoc @next declaration.
+
+    /**
+     *
+     */
+    async function* asyncStream() {
+      yield 1;
+    }
+    // "jsdoc/require-yields": ["error", { "forceRequireYields": true }]
+    // Message: Missing JSDoc @yields declaration.
+    ```
+  </Tab>
+  <Tab title="Correct">
+    ```javascript
+    /**
+     * Generates a sequence of numbers.
+     * @param {number} start - The starting number.
+     * @yields {number} Each number in the sequence.
+     */
+    function* generateSequence(start) {
+      yield start;
+      yield start + 1;
+    }
+
+    /**
+     * A state machine generator.
+     * @yields {string} The current state.
+     * @next {string} The event to process.
+     */
+    function* stateMachine(input) {
+      const response = yield input;
+    }
+    // "jsdoc/require-yields": ["error", { "next": true }]
+
+    /**
+     * @yields {void}
+     */
+    function* emptyGenerator() {
+      yield;
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Configuration example
+
+```javascript
+// eslint.config.js
+import jsdoc from "eslint-plugin-jsdoc";
+
+export default [
+  {
+    plugins: { jsdoc },
+    rules: {
+      "jsdoc/require-yields": [
+        "error",
+        {
+          forceRequireYields: false,
+          withGeneratorTag: true,
+          next: false,
+          exemptedBy: ["inheritdoc", "type"],
+        },
+      ],
+    },
+  },
+];
+```
+
+<Note>
+  Generator functions with only expressionless `yield;` statements (no yielded value) do not trigger this rule by default. Set `forceRequireYields: true` to require documentation even in those cases.
+</Note>

@@ -1,0 +1,263 @@
+---
+title: 'type-formatting: enforce consistent JSDoc type formatting'
+description: 'Automatically formats JSDoc type values for consistency, covering array style, union spacing, object separators, string quotes, and more.'
+keywords: ['eslint', 'jsdoc', 'type-formatting', 'formatting', 'types', 'fixable']
+---
+
+This rule enforces consistent formatting of type values in JSDoc tags. It covers a wide range of style decisions: whether arrays use `string[]` or `Array<string>`, how union members are spaced, what separator appears between object fields, quote style for string literals, and many more.
+
+<Warning>
+  This rule is experimental. The type stringification may not preserve all aspects of your original formatting in edge cases.
+</Warning>
+
+The fixer is enabled by default and will rewrite non-conforming types automatically.
+
+## Rule details
+
+| | |
+|---|---|
+| Rule name | `jsdoc/type-formatting` |
+| Recommended | No |
+| Fixable | Yes |
+| Tags | `@param`, `@property`, `@returns`, `@this`, `@throws`, `@type`, `@typedef`, `@yields` |
+| Context | Everywhere |
+| Settings | `mode` |
+
+## Options
+
+### Array style
+
+<ParamField path="arrayBrackets" type='"square" | "angle"' default='"square"'>
+  How array types are represented.
+  - `"square"` — `string[]`
+  - `"angle"` — `Array<string>`
+</ParamField>
+
+### Union spacing
+
+<ParamField path="unionSpacing" type="string" default='" "'>
+  Spacing to add around the `|` character in union types. Defaults to a single space, producing `string | number`.
+</ParamField>
+
+### Generic dot notation
+
+<ParamField path="genericDot" type="boolean" default="false">
+  Whether to use a dot before the angle brackets of a generic, e.g. `SomeType.<AnotherType>`. Defaults to `false`, producing `SomeType<AnotherType>`.
+</ParamField>
+
+### Generic and tuple element spacing
+
+<ParamField path="genericAndTupleElementSpacing" type="string" default='" "'>
+  Spacing after the comma between elements in generics and tuples. Defaults to a single space, producing `SomeType<T, U>`.
+</ParamField>
+
+### String quote style
+
+<ParamField path="stringQuotes" type='"double" | "single"' default='"double"'>
+  How string literal types are quoted, e.g. `"abc"` vs `'abc'`.
+</ParamField>
+
+### Object field separator
+
+<ParamField path="objectFieldSeparator" type='"comma" | "semicolon" | "linebreak" | "comma-and-linebreak" | "semicolon-and-linebreak"' default='"comma"'>
+  Separator to use after each property-value pair in an object type.
+</ParamField>
+
+<ParamField path="objectFieldSeparatorOptionalLinebreak" type="boolean" default="true">
+  When `objectFieldSeparator` is `"semicolon-and-linebreak"` or `"comma-and-linebreak"`, whether to allow optionally dropping the linebreak (i.e., accepting single-line forms).
+</ParamField>
+
+<ParamField path="objectFieldSeparatorTrailingPunctuation" type="boolean" default="false">
+  Whether to add a trailing separator after the last object field.
+</ParamField>
+
+<ParamField path="separatorForSingleObjectField" type="boolean" default="false">
+  Whether to apply `objectFieldSeparator` when there is only one property in the object.
+</ParamField>
+
+<ParamField path="trailingPunctuationMultilineOnly" type="boolean" default="false">
+  When `objectFieldSeparatorTrailingPunctuation` is set, only add trailing punctuation for multiline types.
+</ParamField>
+
+### Object field quoting
+
+<ParamField path="objectFieldQuote" type='"double" | "single" | null' default="null">
+  Whether to quote object field keys. `null` means quote only when required (e.g., keys with spaces or hyphens). Digits are always kept as-is.
+</ParamField>
+
+### Object spacing
+
+<ParamField path="objectTypeBracketSpacing" type="string" default='""'>
+  Space to add after `{` and before `}` in an object type, e.g. `{ a: string }`.
+</ParamField>
+
+<ParamField path="objectFieldIndent" type="string" default='""'>
+  Whitespace to prepend to each line of an object field when using linebreak separators.
+</ParamField>
+
+### Type bracket spacing
+
+<ParamField path="typeBracketSpacing" type="string" default='""'>
+  Space added immediately after the opening `{` and before the closing `}` of the JSDoc type annotation itself (the outer braces, not the object type braces).
+</ParamField>
+
+### Key-value spacing
+
+<ParamField path="keyValuePostColonSpacing" type="string" default='" "'>
+  Space after the `:` in a key-value pair, e.g. `{ a: string }`.
+</ParamField>
+
+<ParamField path="keyValuePostKeySpacing" type="string" default='""'>
+  Space immediately after the key in a key-value pair, before the `:` or `?`.
+</ParamField>
+
+<ParamField path="keyValuePostOptionalSpacing" type="string" default='""'>
+  Space after the `?` optional marker in a key-value pair.
+</ParamField>
+
+<ParamField path="keyValuePostVariadicSpacing" type="string" default='""'>
+  Space after the `...` variadic operator in a key-value pair.
+</ParamField>
+
+### Arrow function type spacing
+
+<ParamField path="arrowFunctionPostReturnMarkerSpacing" type="string" default='" "'>
+  Space after `=>` in an arrow function type, e.g. `() => void`.
+</ParamField>
+
+<ParamField path="arrowFunctionPreReturnMarkerSpacing" type="string" default='" "'>
+  Space before `=>` in an arrow function type.
+</ParamField>
+
+### Function/class call signature spacing
+
+<ParamField path="functionOrClassParameterSpacing" type="string" default='" "'>
+  Space after the comma between parameters in a function or constructor signature.
+</ParamField>
+
+<ParamField path="functionOrClassPostGenericSpacing" type="string" default='""'>
+  Space after the closing `>` of a generic in a function or class type.
+</ParamField>
+
+<ParamField path="functionOrClassPostReturnMarkerSpacing" type="string" default='" "'>
+  Space after `:` (the return marker) in a function or class signature. Defaults to a single space.
+</ParamField>
+
+<ParamField path="functionOrClassPreReturnMarkerSpacing" type="string" default='""'>
+  Space before `:` in a function or class signature.
+</ParamField>
+
+<ParamField path="functionOrClassTypeParameterSpacing" type="string" default='" "'>
+  Space after the comma between type parameters in a function or class.
+</ParamField>
+
+### Constructor and method spacing
+
+<ParamField path="postNewSpacing" type="string" default='" "'>
+  Space after `new` in a constructor signature, e.g. `{ new (): void }`.
+</ParamField>
+
+<ParamField path="postMethodNameSpacing" type="string" default='""'>
+  Space after a method name in a method signature, e.g. `{ hello(): void }`.
+</ParamField>
+
+<ParamField path="methodQuotes" type='"double" | "single"' default='"double"'>
+  Quote style for method names that require quoting.
+</ParamField>
+
+### Type parameter default value spacing
+
+<ParamField path="parameterDefaultValueSpacing" type="string" default='" "'>
+  Space around the `=` in a type parameter default value, e.g. `<T = string>`.
+</ParamField>
+
+### Fixer control
+
+<ParamField path="enableFixer" type="boolean" default="true">
+  Whether to enable the automatic fixer. Set to `false` to report formatting errors without applying fixes.
+</ParamField>
+
+## Examples
+
+<Tabs>
+  <Tab title="Incorrect">
+    ```ts
+    // Mixed separators in object type
+    /**
+     * @param {{a: string; b: number; c: boolean,}} cfg
+     */
+    // "jsdoc/type-formatting": ["warn", { "objectFieldSeparator": "semicolon" }]
+
+    // Single-quoted string literal when double quotes are required
+    /**
+     * @param {'abc'} cfg
+     */
+    // "jsdoc/type-formatting": ["warn", { "stringQuotes": "double" }]
+
+    // Array<string> when square bracket style is required
+    /**
+     * @param {Array<string>} cfg
+     */
+    // "jsdoc/type-formatting": ["warn", { "arrayBrackets": "square" }]
+    ```
+  </Tab>
+  <Tab title="Correct">
+    ```ts
+    /**
+     * @param {{a: string; b: number; c: boolean}} cfg
+     */
+    // "jsdoc/type-formatting": ["warn", { "objectFieldSeparator": "semicolon" }]
+
+    /**
+     * @param {"abc"} cfg
+     */
+    // "jsdoc/type-formatting": ["warn", { "stringQuotes": "double" }]
+
+    /**
+     * @param {string[]} cfg
+     */
+    // "jsdoc/type-formatting": ["warn", { "arrayBrackets": "square" }]
+    ```
+  </Tab>
+</Tabs>
+
+## Configuration
+
+Basic setup using all defaults:
+
+```json
+{
+  "jsdoc/type-formatting": "warn"
+}
+```
+
+Common configuration for TypeScript-style types with semicolons and square array brackets:
+
+```json
+{
+  "jsdoc/type-formatting": ["warn", {
+    "arrayBrackets": "square",
+    "objectFieldSeparator": "semicolon",
+    "stringQuotes": "double",
+    "unionSpacing": " "
+  }]
+}
+```
+
+Multiline objects with indentation and trailing commas:
+
+```json
+{
+  "jsdoc/type-formatting": ["warn", {
+    "objectFieldSeparator": "comma-and-linebreak",
+    "objectFieldIndent": "  ",
+    "objectFieldSeparatorTrailingPunctuation": true,
+    "trailingPunctuationMultilineOnly": true,
+    "objectTypeBracketSpacing": " "
+  }]
+}
+```
+
+<Note>
+  This rule is not included in any preset config. It is opt-in and intended for projects that want strict, automated consistency in their JSDoc type formatting.
+</Note>

@@ -1,0 +1,300 @@
+---
+title: "Advanced eslint-plugin-jsdoc configuration"
+description: "Create custom forbid rules, use no-missing-syntax and no-restricted-syntax, build your own JSDoc rules with iterateJsdoc, and configure structured tags."
+---
+
+`eslint-plugin-jsdoc` exposes several extension points beyond its built-in rules. You can define individual rules that forbid specific JSDoc structures, enforce custom syntax requirements, and author entirely new JSDoc rules using the `iterateJsdoc` utility.
+
+## AST and selectors
+
+Many rules accept a `contexts` option that lets you expand the set of code nodes the rule targets. Contexts are [ESLint selectors](https://eslint.org/docs/developer-guide/selectors) — [esquery](https://github.com/estools/esquery/#readme) expressions that match specific AST node types or subsets of them.
+
+### `contexts` format
+
+A context can be a plain string selector or an object with a `context` key and additional properties:
+
+- For `require-jsdoc`, the object may include `inlineCommentBlock` and `minLineCount`.
+- For `no-missing-syntax` and `no-restricted-syntax`, the object may include a `message` property to customize the reported message.
+- For `no-missing-syntax`, the object may also include a `minimum` property.
+- For other rules, the object may include a `comment` property that adds a JSDoc AST condition (e.g. `JsdocBlock:has(JsdocTypeName[value="any"])`). This feature is experimental.
+
+### Discovering AST definitions
+
+The available AST node types depend on your parser. The default ESLint parser (Espree) follows [ESTree](https://github.com/estree/estree). For TypeScript, use `@typescript-eslint/parser`.
+
+Two useful tools for exploring AST:
+
+- [AST Explorer](https://astexplorer.net/) — paste code and inspect the generated AST for any parser
+- [eslint-plugin-query](https://github.com/brettz9/eslint-plugin-query) — search your own files with esquery selectors from the CLI
+
+For comment and type AST specifically, see the [@es-joy/jsdoccomment demo](https://es-joy.github.io/jsdoccomment/demo/) and the [jsdoc-type-pratt-parser demo](https://jsdoc-type-pratt-parser.github.io/jsdoc-type-pratt-parser/).
+
+## Forbidding structures
+
+`jsdoc/no-restricted-syntax` reports when a given structure is present, but all of its restrictions share a single rule — you can only disable them all at once. With `extraRuleDefinitions.forbid`, each restriction becomes its own individually toggleable rule.
+
+Pass `extraRuleDefinitions.forbid` to the `jsdoc()` factory. Each key under `forbid` becomes a rule named `jsdoc/forbid-<Key>`:
+
+```js
+import {jsdoc} from 'eslint-plugin-jsdoc';
+
+export default [
+  jsdoc({
+    config: 'flat/recommended',
+    extraRuleDefinitions: {
+      forbid: {
+        Any: {
+          contexts: [
+            {
+              comment: 'JsdocBlock:has(JsdocTypeName[value="any"])',
+              context: 'any',
+              message: '`any` is not allowed; use a more specific type',
+            },
+          ],
+          description: 'Forbids `any` usage',
+          url: 'https://example.com/docs-for-my-any-rule/',
+        },
+        Function: {
+          contexts: [
+            {
+              comment: 'JsdocBlock:has(JsdocTypeName[value="Function"])',
+              context: 'any',
+              message: '`Function` is not allowed; use a more specific type',
+            },
+          ],
+        },
+      },
+    },
+    // The generated rules must be explicitly enabled
+    rules: {
+      'jsdoc/forbid-Any': 'error',
+      'jsdoc/forbid-Function': 'warn',
+    },
+  }),
+];
+```
+
+Because each restriction is now a separate rule, you can disable just one:
+
+```js
+/* eslint-disable jsdoc/forbid-Any */
+/**
+ * @param {any} abc Test
+ * @param {Function} def Test2
+ */
+export const a = (abc, def) => {
+  b(5, abc, def);
+};
+/* eslint-enable jsdoc/forbid-Any */
+```
+
+Only `jsdoc/forbid-Function` fires here (as a warning); `jsdoc/forbid-Any` is suppressed.
+
+### Preferring type structures
+
+When you want to disallow a type and optionally auto-replace it, use `extraRuleDefinitions.preferTypes` instead of `forbid`. This distributes handling to individual per-type rules rather than concentrating everything in `jsdoc/check-types`:
+
+```js
+import {jsdoc} from 'eslint-plugin-jsdoc';
+
+export default [
+  jsdoc({
+    config: 'flat/recommended',
+    extraRuleDefinitions: {
+      preferTypes: {
+        promise: {
+          description: 'Disallows Promises without a generic type',
+          overrideSettings: {
+            Promise: {
+              message: 'Add a generic type for this Promise.',
+              replacement: false,
+              unifyParentAndChildTypeChecks: false,
+            },
+          },
+          url: 'https://example.com/Promise-rule.md',
+        },
+      },
+    },
+    rules: {
+      'jsdoc/prefer-type-promise': 'error',
+    },
+  }),
+];
+```
+
+## `no-missing-syntax` and `no-restricted-syntax`
+
+These two built-in rules let you enforce or ban arbitrary JSDoc structures without creating new rules. Because they have no default options, they are not included in any recommended preset — you configure them entirely yourself.
+
+`no-restricted-syntax` reports when a configured structure is found:
+
+```js
+{
+  rules: {
+    'jsdoc/no-restricted-syntax': ['error', {
+      contexts: [
+        {
+          comment: 'JsdocBlock:has(JsdocTag[tag="todo"])',
+          context: 'any',
+          message: '@todo tags are not allowed in committed code.',
+        },
+      ],
+    }],
+  },
+}
+```
+
+`no-missing-syntax` reports when a configured structure is _absent_. Use the optional `minimum` property to require the structure to appear at least N times:
+
+```js
+{
+  rules: {
+    'jsdoc/no-missing-syntax': ['warn', {
+      contexts: [
+        {
+          comment: 'JsdocBlock:has(JsdocTag[tag="since"])',
+          context: 'ExportNamedDeclaration > FunctionDeclaration',
+          message: 'All exported functions must have a @since tag.',
+        },
+      ],
+    }],
+  },
+}
+```
+
+## Building custom rules with `iterateJsdoc`
+
+For rules beyond what `forbid` and `preferTypes` offer, you can author a full ESLint rule using the `iterateJsdoc` default export. It handles the boilerplate of finding JSDoc comments and wires your iterator into ESLint's rule lifecycle.
+
+### Import
+
+```js
+import iterateJsdoc from 'eslint-plugin-jsdoc/iterateJsdoc.js';
+```
+
+### API
+
+```js
+iterateJsdoc(iterator, ruleConfig)
+```
+
+**`iterator`** — a function called once per JSDoc block. It receives a context object with:
+
+| Property | Description |
+|---|---|
+| `jsdoc` | The parsed JSDoc block (`@es-joy/jsdoccomment` format) |
+| `jsdocNode` | The raw ESLint comment node |
+| `node` | The AST node the comment is attached to |
+| `context` | The ESLint rule context |
+| `settings` | Plugin-wide settings from ESLint config |
+| `utils` | Helper utilities (see below) |
+| `report` | Shorthand for `context.report` scoped to the JSDoc node |
+
+Key `utils` methods:
+
+| Method | Description |
+|---|---|
+| `utils.forEachPreferredTag(tagName, callback)` | Iterate all tags matching `tagName` (respecting tag aliases) |
+| `utils.getTags(tagName)` | Return all tags with the given name |
+| `utils.getPresentTags(tagNames)` | Return tags whose names are in the provided array |
+| `utils.getPreferredTagName({tagName})` | Resolve a tag name through any configured aliases |
+| `utils.reportSettings(message)` | Report a settings-level problem |
+
+**`ruleConfig`** — an object describing the rule:
+
+| Property | Description |
+|---|---|
+| `meta` | Standard ESLint rule meta object (required; `meta.type` must be `"problem"`, `"suggestion"`, or `"layout"`) |
+| `iterateAllJsdocs` | If `true`, visit every JSDoc block regardless of whether it is attached to a function |
+| `contextDefaults` | Default `contexts` value when none is supplied via rule options |
+| `contextSelected` | Force a `contexts` check even without `contextDefaults` |
+| `checkPrivate` | Include `@private` blocks (normally skipped) |
+| `checkInternal` | Include `@internal` blocks (normally skipped) |
+| `checkFile` | Iterate all JSDoc blocks across the entire file regardless of attachment |
+| `exit` | Called when ESLint finishes traversing the program |
+
+### Example custom rule
+
+This rule reports any JSDoc block that is missing a `@since` tag:
+
+```js
+import iterateJsdoc from 'eslint-plugin-jsdoc/iterateJsdoc.js';
+
+export default iterateJsdoc(({
+  jsdoc,
+  report,
+  utils,
+}) => {
+  const hasSince = utils.getTags('since').length > 0;
+
+  if (!hasSince) {
+    report('Missing @since tag.');
+  }
+}, {
+  iterateAllJsdocs: true,
+  meta: {
+    docs: {
+      description: 'Requires a @since tag on every JSDoc block.',
+    },
+    type: 'suggestion',
+  },
+});
+```
+
+Register the rule in your ESLint config:
+
+```js
+import jsdoc from 'eslint-plugin-jsdoc';
+import requireSince from './rules/require-since.js';
+
+export default [
+  {
+    plugins: {
+      jsdoc: {
+        ...jsdoc,
+        rules: {
+          ...jsdoc.rules,
+          'require-since': requireSince,
+        },
+      },
+    },
+    rules: {
+      'jsdoc/require-since': 'warn',
+    },
+  },
+];
+```
+
+## Structured tags
+
+The `structuredTags` setting lets you declare validation constraints for any tag — whether built-in or custom. Pass it under `settings.jsdoc.structuredTags` in a regular ESLint config, or directly as `settings.structuredTags` when using the `jsdoc()` factory (which handles the `jsdoc` namespace automatically).
+
+```js
+import {jsdoc} from 'eslint-plugin-jsdoc';
+
+export default [
+  jsdoc({
+    config: 'flat/recommended',
+    settings: {
+      structuredTags: {
+        see: {
+          // Require the name portion to be a namepath-referencing value
+          name: 'namepath-referencing',
+          // Require the name to always be present
+          required: ['name'],
+        },
+        myTag: {
+          // Only these values are valid for the name portion
+          name: 'text',
+          // Require a type to be present
+          required: ['type'],
+        },
+      },
+    },
+  }),
+];
+```
+
+Valid `name` values are `'text'`, `'namepath-referencing'`, `'namepath-or-url-referencing'`, `'namepath-defining'`, and `false` (no name allowed).
+
+The `required` array can contain `'name'`, `'type'`, and/or `'description'` to enforce that those portions of the tag are always present.

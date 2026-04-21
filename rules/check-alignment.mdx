@@ -1,0 +1,123 @@
+---
+title: "check-alignment: enforce JSDoc block asterisk alignment"
+description: "Reports and auto-fixes invalid asterisk alignment in JSDoc blocks. Recommended rule ensuring each line has a single leading space before the asterisk delimiter."
+keywords: ["eslint", "jsdoc", "check-alignment", "formatting", "asterisk", "indentation"]
+---
+
+The `check-alignment` rule reports and auto-fixes JSDoc block comments where the leading asterisks are not consistently aligned. All lines within a JSDoc block should have their asterisk at the same column, with exactly one space of inner indentation (configurable).
+
+## Rule details
+
+| | |
+|---|---|
+| Recommended | ✓ |
+| Fixable | 🔧 Yes—fixes alignment automatically |
+| Rule name | `"jsdoc/check-alignment"` |
+
+## Options
+
+<ParamField path="innerIndent" type="number" default="1">
+  The number of spaces required between the opening `/**` and the first `*` of
+  subsequent lines. Set to `0` to allow no inner indentation (i.e., asterisks
+  flush with the block opening).
+</ParamField>
+
+## Examples
+
+<Tabs>
+  <Tab title="Incorrect">
+```javascript
+/**
+  * @param {Number} foo
+ */
+function quux(foo) {
+  // Extra leading space before the asterisk on line 2
+}
+// Message: Expected JSDoc block to be aligned.
+
+/**
+* @param {Number} foo
+*/
+function quux(foo) {
+  // Missing inner space: asterisk is flush with opening
+}
+// Message: Expected JSDoc block to be aligned.
+
+ /**
+ * @param {Number} foo
+ */
+function quux(foo) {
+  // Opening /** is indented but asterisks are not
+}
+// Message: Expected JSDoc block to be aligned.
+```
+  </Tab>
+  <Tab title="Correct">
+```javascript
+/**
+ * Desc
+ *
+ * @param {Number} foo
+ */
+function quux(foo) {}
+
+/**
+ * Desc
+ *
+ * @param {{
+  foo: Bar,
+  bar: Baz
+ * }} foo
+ *
+ */
+function quux(foo) {}
+```
+
+With `innerIndent: 0`:
+
+```javascript
+/**
+* @param {Number} foo
+* @access private
+*/
+function quux(foo) {}
+// "jsdoc/check-alignment": ["warn", { "innerIndent": 0 }]
+
+/**
+Some desc.
+@param {Number} foo
+@access private
+*/
+function quux(foo) {}
+// "jsdoc/check-alignment": ["warn", { "innerIndent": 0 }]
+```
+  </Tab>
+</Tabs>
+
+<Note>
+Single-star comments (`/* ... */`) are not checked by this rule—JSDoc blocks must start with `/**` (two stars).
+</Note>
+
+## Configuration
+
+```javascript
+// eslint.config.js
+import jsdoc from 'eslint-plugin-jsdoc';
+
+export default [
+  {
+    plugins: { jsdoc },
+    rules: {
+      // Default: requires one space of inner indentation
+      'jsdoc/check-alignment': 'warn',
+
+      // Or: require no inner indentation
+      'jsdoc/check-alignment': ['warn', { innerIndent: 0 }],
+    },
+  },
+];
+```
+
+<Note>
+This rule is included in `jsdoc.configs['flat/recommended']` and reports at the `warn` level by default.
+</Note>

@@ -1,0 +1,136 @@
+---
+title: 'no-undefined-types: prohibit undefined types in JSDoc'
+description: 'Flags types used in JSDoc comments that are not defined as globals, imports, or @typedef declarations, helping catch typos and missing imports.'
+keywords: ['eslint', 'jsdoc', 'no-undefined-types', 'typedef', 'type checking']
+---
+
+This rule checks that every type name referenced in a JSDoc comment is actually defined somewhere in the file or its globals. It catches typos like `{strnig}` and references to types that were never imported or declared.
+
+When the rule encounters a defined type, it also marks that variable as used, preventing `no-unused-vars` from reporting type-only imports as unused.
+
+The following are always considered defined and are never flagged:
+
+- Primitives: `null`, `undefined`, `void`, `string`, `boolean`, `object`, `function`, `symbol`
+- Numeric types: `number`, `bigint`, `NaN`, `Infinity`
+- TypeScript utilities: `any`, `*`, `never`, `unknown`, `const`
+- Literals: `this`, `true`, `false`
+- Built-ins: `Array`, `Object`, `RegExp`, `Date`, `Function`
+
+In addition to globals from your code and ESLint config, the following tag types define names that can be used as types elsewhere: `@callback`, `@class`, `@constant`, `@event`, `@external`, `@function`, `@interface`, `@member`, `@mixin`, `@name`, `@namespace`, `@typedef`, and `@import` (TypeScript mode).
+
+## Rule details
+
+| | |
+|---|---|
+| Rule name | `jsdoc/no-undefined-types` |
+| Recommended | Yes (disabled in TypeScript configs) |
+| Fixable | No |
+| Tags | `@augments`, `@class`, `@constant`, `@enum`, `@implements`, `@member`, `@module`, `@namespace`, `@param`, `@property`, `@returns`, `@throws`, `@type`, `@typedef`, `@yields` |
+| Settings | `preferredTypes`, `mode`, `structuredTags` |
+
+## Options
+
+<ParamField path="checkUsedTypedefs" type="boolean" default="false">
+  When `true`, the rule also verifies that every `@typedef` defined in the file is actually used somewhere in that file. Reports unused typedefs.
+</ParamField>
+
+<ParamField path="definedTypes" type="array">
+  An array of type name strings to treat as always-defined, in addition to the built-in list and globals. Useful for types coming from declaration files or ambient modules.
+
+  Defaults to `[]`.
+</ParamField>
+
+<ParamField path="disableReporting" type="boolean" default="false">
+  When `true`, the rule stops reporting errors but still marks variables as used (if `markVariablesAsUsed` is enabled) and still runs the `checkUsedTypedefs` logic. Use this to get the variable-marking side effect without the linting errors.
+</ParamField>
+
+<ParamField path="markVariablesAsUsed" type="boolean" default="true">
+  When `true`, type names found in JSDoc comments are marked as used for the purposes of `no-unused-vars`. Set to `false` if you want to enforce that every type import must also appear in runtime code.
+</ParamField>
+
+## Examples
+
+<Tabs>
+  <Tab title="Incorrect">
+    ```ts
+    /**
+     * @param {strnig} foo - Typo in type name.
+     */
+    function quux(foo) {}
+
+    /**
+     * @param {MyType} foo
+     * @param {HisType} bar - HisType is not defined anywhere.
+     */
+    function quux(foo, bar) {}
+    // "jsdoc/no-undefined-types": ["error", { "definedTypes": ["MyType"] }]
+
+    /** @typedef {string} SomeType */
+    /** @typedef {number} AnotherType */
+
+    /** @type {AnotherType} */
+    // "jsdoc/no-undefined-types": ["error", { "checkUsedTypedefs": true }]
+    // SomeType is declared but never used → reported
+    ```
+  </Tab>
+  <Tab title="Correct">
+    ```ts
+    /**
+     * @param {string} foo - Built-in type, always defined.
+     */
+    function quux(foo) {}
+
+    import { MyType } from 'my-library';
+
+    /**
+     * @param {MyType} foo - Imported, so it's defined.
+     */
+    function quux(foo) {}
+
+    /**
+     * @typedef {object} hello
+     * @property {string} a
+     */
+
+    /**
+     * @param {hello} foo - Defined via @typedef above.
+     */
+    function quux(foo) {}
+
+    /**
+     * @param {MyType} foo
+     * @param {HisType} bar
+     */
+    function quux(foo, bar) {}
+    // "jsdoc/no-undefined-types": ["error", { "definedTypes": ["MyType", "HisType"] }]
+    ```
+  </Tab>
+</Tabs>
+
+## Configuration
+
+```json
+{
+  "jsdoc/no-undefined-types": "error"
+}
+```
+
+To suppress errors while still marking types as used (useful as a migration step):
+
+```json
+{
+  "jsdoc/no-undefined-types": ["error", { "disableReporting": true }]
+}
+```
+
+To add types from external declaration files:
+
+```json
+{
+  "jsdoc/no-undefined-types": ["error", { "definedTypes": ["NodeJS", "Express"] }]
+}
+```
+
+<Note>
+  This rule is enabled by default in the `recommended` preset. It is **turned off** in the TypeScript-focused presets (`flat/recommended-typescript` and `flat/recommended-typescript-flavor`) because TypeScript's own compiler performs more thorough type checking.
+</Note>

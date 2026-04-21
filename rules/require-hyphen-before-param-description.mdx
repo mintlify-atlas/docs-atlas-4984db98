@@ -1,0 +1,166 @@
+---
+title: "require-hyphen-before-param-description"
+description: "Requires or forbids a hyphen before @param descriptions (and optionally other tags), enforcing a consistent separator style across all JSDoc comments."
+---
+
+The `require-hyphen-before-param-description` rule enforces a consistent style for the separator between a parameter name and its description. Many style guides require a hyphen (e.g., `@param foo - Description`), while others forbid it. The rule is auto-fixable in both directions.
+
+<Note>
+  A hyphen immediately followed by a newline after the parameter name (e.g., `@param foo -\n`) is always forbidden when using `"always"`, as this causes incorrect display in Visual Studio Code.
+</Note>
+
+## Rule details
+
+| | |
+|---|---|
+| Recommended | no |
+| Fixable | yes (🔧) |
+| Rule name | `"jsdoc/require-hyphen-before-param-description"` |
+
+The fixer adds a hyphen for `"always"` and removes it for `"never"`.
+
+## Options
+
+The first option is a string:
+
+- `"always"` (default) — a hyphen must appear before the description
+- `"never"` — a hyphen must not appear before the description
+
+The second option is an object:
+
+<ParamField body="tags" type="object">
+  Extends (or overrides) hyphen checking to tags other than `@param`. Keys are tag names; values are `"always"` or `"never"`. Use `"*"` as a key to apply a rule to all tags not otherwise listed.
+
+  For example:
+  - `{ property: "always" }` — require a hyphen on `@property` descriptions
+  - `{ "*": "never", returns: "always" }` — forbid hyphens everywhere except `@returns`
+</ParamField>
+
+## Examples
+
+<Tabs>
+  <Tab title="Incorrect">
+    ```js
+    // "always" — missing hyphen before description
+    /**
+     * @param foo Foo.
+     */
+    function quux () {}
+
+    // "never" — hyphen present but should not be
+    /**
+     * @param foo - Foo.
+     */
+    function quux () {}
+
+    // "always" with tags: { property: "always" } — @property missing hyphen
+    /**
+     * @typedef {SomeType} ATypeDefName
+     * @property foo Foo.
+     */
+
+    // Hyphen immediately before a newline — always forbidden with "always"
+    /**
+     * @param foo -
+     * The possible values for `foo` are as follows.
+     */
+    ```
+  </Tab>
+  <Tab title="Correct">
+    ```js
+    // "always" — hyphen present
+    /**
+     * @param foo - Foo.
+     */
+    function quux () {}
+
+    // "never" — no hyphen
+    /**
+     * @param foo Foo.
+     */
+    function quux () {}
+
+    // "always" with tags: { property: "always" }
+    /**
+     * @typedef {SomeType} ATypeDefName
+     * @property foo - Foo.
+     */
+
+    // "always" with tags: { returns: "never" } — @returns has no hyphen
+    /**
+     * @param foo - Foo.
+     * @returns {SomeType} A description.
+     */
+    function quux () {}
+
+    // Multi-line description with hyphen on same line as name
+    /**
+     * @param foo - The possible values for `foo` are as follows.
+     * - `"option1"`: Description of option 1.
+     * - `"option2"`: Description of option 2.
+     */
+    ```
+  </Tab>
+</Tabs>
+
+### Applying to all tags with `"*"`
+
+```js
+// Require hyphens on all tags except @returns
+/**
+ * @param {string} unit - Unit to split.
+ * @param {string} [basicUnit] - Basic unit regardless of metric prefix.
+ *
+ * @returns {{ prefix: string, basicUnit: string }} Split result.
+ */
+// "jsdoc/require-hyphen-before-param-description": ["warn", "always", {
+//   "tags": { "*": "never", "property": "always" }
+// }]
+// Note: param follows the main "always" option; @returns matches "*": "never"
+```
+
+### Applying to `@template`
+
+```js
+// ✅ "always" with tags: { template: "always" }
+/**
+ * @template {any} T - Arg 1
+ * @template {string | number} K - Arg 2
+ * @typedef {any} Test
+ */
+```
+
+## Configuration
+
+```js
+// eslint.config.js
+import jsdoc from "eslint-plugin-jsdoc";
+
+export default [
+  {
+    plugins: { jsdoc },
+    rules: {
+      // Require hyphen before @param description (default behavior)
+      "jsdoc/require-hyphen-before-param-description": ["warn", "always"],
+
+      // Forbid hyphen before @param description
+      "jsdoc/require-hyphen-before-param-description": ["warn", "never"],
+
+      // Require hyphen on @param and @property; forbid on @returns
+      "jsdoc/require-hyphen-before-param-description": ["warn", "always", {
+        tags: {
+          property: "always",
+          returns: "never",
+        },
+      }],
+
+      // Apply to all tags uniformly
+      "jsdoc/require-hyphen-before-param-description": ["warn", "always", {
+        tags: {
+          "*": "always",
+        },
+      }],
+    },
+  },
+];
+```

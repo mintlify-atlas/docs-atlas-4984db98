@@ -1,0 +1,91 @@
+---
+title: 'ts-prefer-function-type: prefer arrow function types'
+description: 'Enforces the concise () => void arrow function syntax over { (): void } call signature syntax in JSDoc types. Autofixable for TypeScript projects.'
+keywords: ['eslint', 'jsdoc', 'ts-prefer-function-type', 'typescript', 'call signature', 'function type']
+---
+
+When a JSDoc type contains an object with a single call signature and no other properties, the more concise arrow function syntax is preferred. Instead of `{ (arg: string): void }`, write `(arg: string) => void`.
+
+This rule is inspired by `typescript-eslint`'s [`prefer-function-type`](https://typescript-eslint.io/rules/prefer-function-type/) rule, applied to JSDoc type annotations.
+
+The rule only triggers when the call signature is the **only** element in the object. If the object also has other properties, the call signature form is required and the rule does not flag it.
+
+## Rule details
+
+| | |
+|---|---|
+| Rule name | `jsdoc/ts-prefer-function-type` |
+| Recommended | No |
+| Fixable | Yes — rewrites `{ (): T }` to `() => T` automatically |
+| Tags | All tags that may have a type position |
+| Context | Everywhere |
+
+## Options
+
+<ParamField path="enableFixer" type="boolean" default="true">
+  Whether to enable the automatic fixer. Set to `false` to report errors without applying fixes.
+</ParamField>
+
+## Examples
+
+<Tabs>
+  <Tab title="Incorrect">
+    ```ts
+    /**
+     * @param {{
+     *   (arg: string): void;
+     * }} someName
+     */
+
+    /**
+     * @param {(string | {
+     *   (arg: string): void;
+     * })} someName
+     */
+    ```
+  </Tab>
+  <Tab title="Correct">
+    ```ts
+    // Arrow function type — preferred
+    /**
+     * @param {(arg: string) => void} someName
+     */
+
+    // Multiple call signatures — object form is required here
+    /**
+     * @param {{
+     *   (data: string): number;
+     *   (id: number): string;
+     * }} someName
+     */
+
+    // Call signature alongside other properties — object form is required
+    /**
+     * @param {{
+     *   (arg: string): void;
+     *   abc: number;
+     * }} someName
+     */
+    ```
+  </Tab>
+</Tabs>
+
+## Configuration
+
+```json
+{
+  "jsdoc/ts-prefer-function-type": "warn"
+}
+```
+
+To disable the fixer and report only:
+
+```json
+{
+  "jsdoc/ts-prefer-function-type": ["warn", { "enableFixer": false }]
+}
+```
+
+<Note>
+  This rule is not included in any preset config by default. Add it manually when you want to enforce consistent use of the arrow function type syntax in JSDoc annotations.
+</Note>

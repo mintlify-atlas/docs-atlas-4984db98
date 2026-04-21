@@ -1,0 +1,198 @@
+---
+title: "require-jsdoc: enforce JSDoc comments on functions"
+description: "Require JSDoc comment blocks on function declarations, class declarations, and other code constructs. Helps enforce consistent documentation across a codebase."
+---
+
+The `require-jsdoc` rule checks that JSDoc comment blocks are present on functions, classes, and other constructs. It is one of the most commonly used rules in `eslint-plugin-jsdoc`, acting as a baseline enforcement that documentation exists before other rules verify its quality.
+
+## Rule details
+
+| | |
+|---|---|
+| Recommended | ✓ |
+| Fixable | 🔧 (adds an empty JSDoc block) |
+| Rule name | `"jsdoc/require-jsdoc"` |
+
+The fixer adds an empty JSDoc block comment above the undocumented construct. You can control this behavior with the `enableFixer` and `fixerMessage` options.
+
+## Options
+
+### `require`
+
+An object controlling which constructs must have JSDoc comments. All keys default to `false` except `FunctionDeclaration`, which defaults to `true`.
+
+<AccordionGroup>
+  <Accordion title="require.FunctionDeclaration">
+    Whether to check named function declarations like `function myFunc() {}`. Defaults to `true`.
+  </Accordion>
+  <Accordion title="require.MethodDefinition">
+    Whether to check class method definitions like `class A { myMethod() {} }`. Defaults to `false`.
+  </Accordion>
+  <Accordion title="require.ClassDeclaration">
+    Whether to check class declarations like `class MyClass {}`. Defaults to `false`.
+  </Accordion>
+  <Accordion title="require.ClassExpression">
+    Whether to check class expressions like `const MyClass = class {}`. Defaults to `false`.
+  </Accordion>
+  <Accordion title="require.ArrowFunctionExpression">
+    Whether to check arrow functions like `const fn = () => {}`. Defaults to `false`.
+  </Accordion>
+  <Accordion title="require.FunctionExpression">
+    Whether to check function expressions like `const fn = function() {}`. Defaults to `false`.
+  </Accordion>
+</AccordionGroup>
+
+### `checkConstructors`
+
+Whether constructors should be checked. Defaults to `true`. When `true`, the `exemptEmptyConstructors` option may still avoid reporting when the constructor has no parameters or return values.
+
+### `checkGetters`
+
+Whether getter methods should be checked. Can be `true`, `false`, or `"no-setter"` (only check getters that have no corresponding setter). Defaults to `false`.
+
+### `checkSetters`
+
+Whether setter methods should be checked. Can be `true`, `false`, or `"no-getter"` (only check setters that have no corresponding getter). Defaults to `false`.
+
+### `enableFixer`
+
+Whether to enable the automatic fixer that inserts an empty JSDoc block. Defaults to `true`.
+
+### `fixerMessage`
+
+An optional message string to insert into the fixer-generated JSDoc block. Defaults to `""`.
+
+### `minLineCount`
+
+An integer specifying the minimum number of lines a function body must have before it requires a JSDoc comment. Defaults to `undefined` (no minimum). Context-specific line counts can be set per entry in the `contexts` array.
+
+### `contexts`
+
+An array of AST node type strings (or objects) representing additional contexts where the rule should apply. Each entry can be a string like `"Property"` or an object with:
+
+- `context` — the AST selector string
+- `inlineCommentBlock` — if `true`, the fixer inserts an inline `/** */` instead of a multi-line block
+- `minLineCount` — a per-context minimum line count
+
+Defaults to `[]`. Use this to extend coverage to TypeScript constructs like `TSInterfaceDeclaration`, `TSMethodSignature`, `TSPropertySignature`, `TSEnumDeclaration`, and `TSTypeAliasDeclaration`.
+
+### `publicOnly`
+
+Restricts reporting to only functions/classes exported from the module. Can be `true` (use defaults) or an object with:
+
+| Key | Default | Description |
+|---|---|---|
+| `esm` | `true` | Check ESM exports (`export`, `export default`) |
+| `cjs` | `true` | Check CommonJS exports (`module.exports`, `exports.*`) |
+| `window` | `false` | Check window-global assignments |
+| `ancestorsOnly` | `false` | Optimization: only check direct ancestor nodes for export status |
+
+### `exemptEmptyConstructors`
+
+When `true`, constructors with no parameters and no return value are not reported. Defaults to `true`.
+
+### `exemptEmptyFunctions`
+
+When `true`, functions with no parameters and no return value are not reported. Defaults to `false`.
+
+### `exemptOverloadedImplementations`
+
+When `true`, the implementation function in an overloaded function set is not checked. Defaults to `false`.
+
+### `skipInterveningOverloadedDeclarations`
+
+When `true`, the rule looks past intermediate uncommented overloads to find a comment at the top of an overloaded set. Defaults to `true`.
+
+### `checkAllFunctionExpressions`
+
+When `true`, checks all function expressions regardless of their parent context. Normally only certain parent contexts are checked. Defaults to `false`.
+
+## Examples
+
+<Tabs>
+  <Tab title="Incorrect">
+    ```javascript
+    // Missing JSDoc on a function declaration (default behavior)
+    function greetUser(name) {
+      return `Hello, ${name}!`;
+    }
+
+    // Missing JSDoc on a class (with ClassDeclaration: true)
+    class UserService {
+      constructor(db) {
+        this.db = db;
+      }
+    }
+
+    // Missing JSDoc on an arrow function exported from module
+    export const formatDate = (date) => {
+      return date.toISOString();
+    };
+    // "jsdoc/require-jsdoc": ["error", { "publicOnly": true, "require": { "ArrowFunctionExpression": true } }]
+    ```
+  </Tab>
+  <Tab title="Correct">
+    ```javascript
+    /**
+     * Greets a user by name.
+     * @param {string} name - The user's name.
+     * @returns {string} The greeting message.
+     */
+    function greetUser(name) {
+      return `Hello, ${name}!`;
+    }
+
+    /**
+     * Manages user data.
+     */
+    class UserService {
+      constructor(db) {
+        this.db = db;
+      }
+    }
+
+    /**
+     * Formats a date as an ISO string.
+     * @param {Date} date - The date to format.
+     * @returns {string} ISO 8601 string.
+     */
+    export const formatDate = (date) => {
+      return date.toISOString();
+    };
+    ```
+  </Tab>
+</Tabs>
+
+## Configuration example
+
+```javascript
+// eslint.config.js
+import jsdoc from "eslint-plugin-jsdoc";
+
+export default [
+  {
+    plugins: { jsdoc },
+    rules: {
+      "jsdoc/require-jsdoc": [
+        "error",
+        {
+          require: {
+            FunctionDeclaration: true,
+            MethodDefinition: true,
+            ClassDeclaration: true,
+            ArrowFunctionExpression: false,
+            FunctionExpression: false,
+          },
+          publicOnly: true,
+          exemptEmptyConstructors: true,
+          enableFixer: true,
+        },
+      ],
+    },
+  },
+];
+```
+
+<Tip>
+  Use `contexts` to extend coverage to TypeScript-specific constructs such as `TSInterfaceDeclaration`, `TSMethodSignature`, and `TSEnumDeclaration` without enabling broader checks.
+</Tip>

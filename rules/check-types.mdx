@@ -1,0 +1,294 @@
+---
+title: "check-types: validate and enforce JSDoc type casing"
+description: "Reports invalid type names in JSDoc and enforces consistent casing for native JavaScript types, with support for customizing preferred type names via settings."
+keywords: ["eslint", "jsdoc", "check-types", "types", "casing", "preferred types"]
+---
+
+The `check-types` rule reports invalid type names and enforces the correct casing for native JavaScript types. By default, it requires lowercase for primitives (`boolean`, `number`, `string`) and capitalized names for objects (`Array`, `Function`, `Date`, `RegExp`).
+
+## Rule details
+
+| | |
+|---|---|
+| Recommended | ✓ |
+| Fixable | 🔧 Yes—replaces native types with correct casing and applies `preferredTypes` substitutions |
+| Rule name | `"jsdoc/check-types"` |
+| Context | Everywhere |
+| Settings | `preferredTypes`, `mode`, `structuredTags` |
+
+## Default type requirements
+
+The rule enforces the following type casing by default:
+
+| Type | Preferred |
+|------|-----------|
+| `undefined` | `undefined` |
+| `null` | `null` |
+| `Boolean` | `boolean` |
+| `Number` | `number` |
+| `String` | `string` |
+| `symbol` | `symbol` |
+| `bigint` | `bigint` |
+| `Object` | `object` (but `Object<K, V>` is allowed for TypeScript compatibility) |
+| `array` | `Array` |
+| `function` | `Function` |
+| `date` | `Date` |
+| `regexp` | `RegExp` |
+
+## Why lowercase primitives?
+
+JavaScript has both primitive types and their Object wrappers. For example, `string` and `String` are different:
+
+```javascript
+new String('lard') === 'lard' // false
+```
+
+In practice, you almost always work with string primitives, not `String` objects. The rule therefore requires lowercase for `boolean`, `number`, and `string` while requiring capitalized names for types that are always used as objects (`Array`, `Function`, `Date`, `RegExp`).
+
+## Options
+
+<ParamField path="exemptTagContexts" type="array">
+  Avoids reporting bad types when found on a specific tag. Each entry is an
+  object with:
+
+  - `tag` — the tag name to exempt (e.g., `"typedef"`)
+  - `types` — either `true` to allow all types, or an array of specific type
+    strings to allow
+
+  ```json
+  {
+    "exemptTagContexts": [
+      { "tag": "typedef", "types": true }
+    ]
+  }
+  ```
+</ParamField>
+
+<ParamField path="noDefaults" type="boolean" default="false">
+  When `true`, only the types specified in `settings.jsdoc.preferredTypes` are
+  enforced. The built-in defaults (such as preferring `"string"` over
+  `"String"`) are disabled.
+</ParamField>
+
+<ParamField path="unifyParentAndChildTypeChecks" type="boolean">
+  **Deprecated.** Use the `preferredTypes[preferredType].unifyParentAndChildTypeChecks`
+  setting instead. When `true`, parent type checks (e.g., `Array`) also apply
+  to child form checks (e.g., `Array.<>`).
+</ParamField>
+
+## Customizing with `preferredTypes`
+
+The `settings.jsdoc.preferredTypes` setting controls type substitutions. Each key is a type to disallow, and its value is the preferred replacement:
+
+```json
+{
+  "settings": {
+    "jsdoc": {
+      "preferredTypes": {
+        "Array": "GenericArray",
+        "object": "Object",
+        "String": "string"
+      }
+    }
+  }
+}
+```
+
+Values can also be objects for custom messages:
+
+```json
+{
+  "preferredTypes": {
+    "abc": {
+      "message": "Use Abc instead of abc.",
+      "replacement": "Abc"
+    }
+  }
+}
+```
+
+Set a value to `false` to disallow a type without a replacement:
+
+```json
+{
+  "preferredTypes": {
+    "*": false
+  }
+}
+```
+
+### Generic type syntax
+
+You can target generic forms specifically:
+
+```json
+{
+  "preferredTypes": {
+    "Array.<>": "[]",
+    "Array<>": "[]",
+    "object.<>": "Object.<>",
+    "[]": "Array.<>"
+  }
+}
+```
+
+## Examples
+
+<Tabs>
+  <Tab title="Incorrect">
+```javascript
+/**
+ * @param {Number} foo
+ */
+function quux(foo) {}
+// Message: Invalid JSDoc @param "foo" type "Number"; prefer: "number".
+
+/**
+ * @param {(Number | string | Boolean)=} foo
+ */
+function quux(foo, bar, baz) {}
+// Message: Invalid JSDoc @param "foo" type "Number"; prefer: "number".
+
+/**
+ * @param {Array.<Number | String>} foo
+ */
+function quux(foo, bar, baz) {}
+// Message: Invalid JSDoc @param "foo" type "Number"; prefer: "number".
+
+/**
+ * @returns {Number} foo
+ * @throws {Number} foo
+ */
+function quux() {}
+// Message: Invalid JSDoc @returns type "Number"; prefer: "number".
+```
+
+With `settings.jsdoc.preferredTypes`:
+
+```javascript
+/**
+ * @param {abc} foo
+ */
+function qux(foo) {}
+// Settings: { "jsdoc": { "preferredTypes": { "abc": "Abc" } } }
+// Message: Invalid JSDoc @param "foo" type "abc"; prefer: "Abc".
+
+/**
+ * @param {Array} foo
+ */
+function quux(foo) {}
+// Settings: { "jsdoc": { "preferredTypes": { "Array": "GenericArray" } } }
+// Message: Invalid JSDoc @param "foo" type "Array"; prefer: "GenericArray".
+
+/**
+ * @param {Object} param
+ * @return {Object | String}
+ */
+function abc(param) {}
+// Message: Invalid JSDoc @param "param" type "Object"; prefer: "object".
+```
+  </Tab>
+  <Tab title="Correct">
+```javascript
+/**
+ * @param {number} foo
+ * @param {Bar} bar
+ * @param {*} baz
+ */
+function quux(foo, bar, baz) {}
+
+/**
+ * @param {(number | string | boolean)=} foo
+ */
+function quux(foo, bar, baz) {}
+
+/**
+ * @param {Array} foo
+ */
+function quux(foo) {}
+
+/**
+ * @param {Array.<string>} foo
+ */
+function quux(foo) {}
+
+/**
+ * @param {string[]} foo
+ */
+function quux(foo) {}
+
+/**
+ * @param {typeof bar} foo
+ */
+function qux(foo) {}
+
+/**
+ * @param {import('./foo').bar.baz} foo
+ */
+function qux(foo) {}
+```
+
+With `noDefaults: true`:
+
+```javascript
+/**
+ * @returns {Number} foo
+ * @throws {Number} foo
+ */
+function quux() {}
+// Valid: noDefaults disables built-in casing requirements
+```
+
+With `exemptTagContexts`:
+
+```javascript
+/** @typedef {object} foo */
+// Settings: { "preferredTypes": { "object": "Object" } }
+// "jsdoc/check-types": ["warn", { "exemptTagContexts": [{ "tag": "typedef", "types": true }] }]
+// Valid: the typedef tag is exempt from the object→Object preference
+```
+  </Tab>
+</Tabs>
+
+## TypeScript mode
+
+In TypeScript mode (`settings.jsdoc.mode: "typescript"`), using bare `object` with generic syntax is discouraged. The rule recommends index signatures or shorthand object syntax instead:
+
+```javascript
+/**
+ * @param {object.<string>} foo
+ */
+function quux(foo) {}
+// Settings: { "jsdoc": { "mode": "typescript" } }
+// Message: Use object shorthand or index signatures instead of `object`,
+//          e.g., `{[key: string]: string}`
+```
+
+## Configuration
+
+```javascript
+// eslint.config.js
+import jsdoc from 'eslint-plugin-jsdoc';
+
+export default [
+  {
+    plugins: { jsdoc },
+    rules: {
+      'jsdoc/check-types': 'warn',
+    },
+    settings: {
+      jsdoc: {
+        preferredTypes: {
+          // Enforce preferred type names
+          'Object': 'object',
+          'Boolean': 'boolean',
+        },
+      },
+    },
+  },
+];
+```
+
+<Note>
+This rule is included in `jsdoc.configs['flat/recommended']` and reports at the `warn` level by default.
+</Note>

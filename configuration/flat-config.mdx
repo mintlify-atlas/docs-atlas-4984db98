@@ -1,0 +1,147 @@
+---
+title: "Flat config setup for eslint-plugin-jsdoc"
+description: "Configure eslint-plugin-jsdoc using ESLint flat config (eslint.config.js). Covers procedural jsdoc() factory and declarative config array approaches."
+---
+
+ESLint's flat config format (used in `eslint.config.js`) is supported natively in ESLint 9 and available as the default in ESLint 8.57+. `eslint-plugin-jsdoc` provides first-class support for flat config through both a procedural factory function and a declarative config object export.
+
+## Procedural approach (recommended)
+
+The `jsdoc()` factory function is the recommended way to configure the plugin in flat config. It handles plugin registration, merges settings, and returns a single config object ready to spread into your config array.
+
+```js
+import { jsdoc } from 'eslint-plugin-jsdoc';
+
+export default [
+  jsdoc({ config: 'flat/recommended' }),
+];
+```
+
+### With custom rules and settings
+
+You can pass `rules` and `settings` alongside the `config` key. The factory merges the provided settings recursively with the config's built-in defaults by default:
+
+```js
+import { jsdoc } from 'eslint-plugin-jsdoc';
+
+export default [
+  jsdoc({
+    config: 'flat/recommended',
+    rules: {
+      'jsdoc/check-values': [
+        'error',
+        {
+          allowedLicenses: ['MIT', 'ISC'],
+        },
+      ],
+    },
+    // Do not add a `jsdoc` child object here as you would for regular ESLint `settings`
+    settings: {
+      structuredTags: {
+        see: {
+          name: 'namepath-referencing',
+          required: ['name'],
+        },
+      },
+      /*
+        // Since the recommended config has been chosen, the above settings will
+        // be merged by default with the following (which are tags that are
+        // being allowed and requiring a type):
+        structuredTags: {
+          next: { required: ['type'] },
+          rejects: { required: ['type'] },
+        },
+      */
+    },
+  }),
+];
+```
+
+<Note>
+Do not nest your settings under a `jsdoc` key when passing them to the `jsdoc()` factory. The factory wraps them automatically. This differs from regular ESLint `settings`, where you would write `settings: { jsdoc: { ... } }`.
+</Note>
+
+### `mergeSettings` option
+
+By default, settings passed to `jsdoc()` are merged recursively with the preset config's own settings. To overwrite the config's settings entirely instead of merging, set `mergeSettings` to `false`:
+
+```js
+jsdoc({
+  config: 'flat/recommended',
+  mergeSettings: false,
+  settings: {
+    // These settings fully replace (not extend) the preset's settings
+    structuredTags: {
+      see: { name: 'namepath-referencing', required: ['name'] },
+    },
+  },
+})
+```
+
+### `extraRuleDefinitions.forbid` option
+
+The `extraRuleDefinitions.forbid` option lets you dynamically add custom rule definitions to the plugin that report on specific JSDoc comment structures. This is useful for creating project-specific rules without publishing a separate plugin.
+
+```js
+jsdoc({
+  config: 'flat/recommended',
+  extraRuleDefinitions: {
+    forbid: {
+      'no-todo-tags': {
+        description: 'Disallows @todo tags in JSDoc comments',
+        contexts: [
+          {
+            comment: 'JsdocBlock:has(JsdocTag[tag=todo])',
+            context: 'any',
+            message: '@todo tags are not permitted in this project.',
+          },
+        ],
+      },
+    },
+  },
+})
+```
+
+### `files` and `ignores`
+
+Standard ESLint config properties such as `files`, `ignores`, `languageOptions`, and `linterOptions` are all forwarded to the output config object:
+
+```js
+jsdoc({
+  config: 'flat/recommended',
+  files: ['src/**/*.js'],
+  ignores: ['**/*.test.js'],
+})
+```
+
+<Warning>
+If the specified `config` produces an array (such as `flat/recommended-mixed`), `files` and `ignores` will not currently be applied to all entries. Use the declarative approach for array-based configs.
+</Warning>
+
+---
+
+## Declarative approach
+
+You can also import the pre-built config objects directly from the plugin and include them in your flat config array. This is equivalent to what the factory function does, but requires manually providing the `plugins` entry for any additional rules you configure.
+
+```js
+import jsdoc from 'eslint-plugin-jsdoc';
+
+export default [
+  // Preset config (already includes plugins: { jsdoc })
+  jsdoc.configs['flat/recommended'],
+  // Additional overrides
+  {
+    files: ['**/*.js'],
+    // `plugins` is not required here if the preset config is already included above
+    plugins: { jsdoc },
+    rules: {
+      'jsdoc/require-description': 'warn',
+    },
+  },
+];
+```
+
+### Available flat config keys
+
+All preset configs are available on `jsdoc.configs` under `flat/` prefixed keys. See [Preset configs](/configuration/preset-configs) for the full list and descriptions of each.

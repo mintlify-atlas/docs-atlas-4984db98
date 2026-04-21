@@ -1,0 +1,122 @@
+---
+title: "require-throws: enforce @throws tags on functions that throw"
+description: "Require a @throws JSDoc tag on functions that contain throw statements. Helps callers understand error conditions. Async throws are excluded by default."
+---
+
+The `require-throws` rule checks that functions containing `throw` statements have a corresponding `@throws` (or `@exception`) tag in their JSDoc block.
+
+Note that `throw` statements inside `async` functions result in a rejected `Promise` rather than a synchronous exception, so they are excluded from this rule. See the `require-rejects` rule for documenting `Promise` rejections.
+
+## Rule details
+
+| | |
+|---|---|
+| Recommended | No |
+| Fixable | No |
+| Rule name | `"jsdoc/require-throws"` |
+| Tag aliases | `@exception` |
+
+The rule also enforces the special `@throws {never}` annotation: if a function is tagged `@throws {never}` but contains a `throw` statement, it will be reported.
+
+## Options
+
+### `contexts`
+
+An array of AST context strings (or objects with `context` and `comment` properties) where the rule should apply. Overrides the default contexts (`ArrowFunctionExpression`, `FunctionDeclaration`, `FunctionExpression`). Set to `"any"` to apply to any JSDoc block, including `@callback` and `@function` blocks.
+
+### `exemptedBy`
+
+Array of tag names whose presence exempts the block from this rule. Defaults to `["inheritdoc"]`.
+
+## Examples
+
+<Tabs>
+  <Tab title="Incorrect">
+    ```javascript
+    /**
+     *
+     */
+    function parseConfig(input) {
+      if (!input) {
+        throw new Error("Input is required");
+      }
+      return JSON.parse(input);
+    }
+    // Message: Missing JSDoc @throws declaration.
+
+    /**
+     * @throws {never}
+     */
+    function safeMethod(value) {
+      throw new Error("Unexpected error");
+    }
+    // Message: JSDoc @throws declaration set to "never" but throw value found.
+    ```
+  </Tab>
+  <Tab title="Correct">
+    ```javascript
+    /**
+     * Parses a configuration string.
+     * @param {string} input - JSON configuration string.
+     * @returns {object} Parsed configuration.
+     * @throws {Error} If input is missing or not valid JSON.
+     */
+    function parseConfig(input) {
+      if (!input) {
+        throw new Error("Input is required");
+      }
+      return JSON.parse(input);
+    }
+
+    /**
+     * A function that throws inside a try/catch — no @throws needed.
+     */
+    function safeAttempt(fn) {
+      try {
+        throw new Error("inner error");
+      } catch (e) {
+        // handled
+      }
+    }
+
+    /**
+     * @throws {never}
+     */
+    function guaranteedSafe(value) {
+      return value * 2;
+    }
+
+    /**
+     * Async throws become rejected promises, not synchronous exceptions.
+     */
+    async function asyncOperation() {
+      throw new Error("rejection");
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Configuration example
+
+```javascript
+// eslint.config.js
+import jsdoc from "eslint-plugin-jsdoc";
+
+export default [
+  {
+    plugins: { jsdoc },
+    rules: {
+      "jsdoc/require-throws": [
+        "warn",
+        {
+          exemptedBy: ["inheritdoc", "abstract"],
+        },
+      ],
+    },
+  },
+];
+```
+
+<Note>
+  `throw` statements that are fully enclosed in a `try/catch` block and never re-thrown are not reported, since they do not escape the function boundary.
+</Note>

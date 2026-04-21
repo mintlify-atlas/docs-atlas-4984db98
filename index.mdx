@@ -1,97 +1,72 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "eslint-plugin-jsdoc: JSDoc linting rules for ESLint"
+description: "eslint-plugin-jsdoc provides 66+ linting rules that enforce correct, consistent, and complete JSDoc comments in JavaScript and TypeScript projects."
 ---
 
-## Setting up
+eslint-plugin-jsdoc is the most comprehensive JSDoc linting plugin for ESLint, with over 66 rules covering tag validation, formatting, completeness, and TypeScript-specific patterns. Whether you're working with plain JavaScript, TypeScript syntax, or JSDoc-flavored TypeScript, it provides ready-made presets and fine-grained rule control.
 
-Get your documentation site up and running in minutes.
-
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
-
-## Make it yours
-
-Design a docs site that looks great and empowers your users.
-
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/installation">
+    Install eslint-plugin-jsdoc and get it running in your project in minutes.
   </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Set up your first JSDoc linting configuration with a recommended preset.
   </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+  <Card title="Preset Configs" icon="sliders" href="/configuration/preset-configs">
+    Explore recommended configs for JavaScript, TypeScript, TSDoc, and mixed projects.
   </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
+  <Card title="Rules Reference" icon="list-check" href="/rules/overview">
+    Browse all 66+ rules with descriptions, options, and examples.
   </Card>
-</Columns>
+</CardGroup>
 
-## Create beautiful pages
+## What you can do with eslint-plugin-jsdoc
 
-Everything you need to create world-class documentation.
+<CardGroup cols={2}>
+  <Card title="Validate tag names and types" icon="tag" href="/rules/check-tag-names">
+    Catch invalid or misspelled JSDoc tags and enforce preferred type names.
+  </Card>
+  <Card title="Require documentation completeness" icon="circle-check" href="/rules/require-param">
+    Enforce that all parameters, return values, and throws are documented.
+  </Card>
+  <Card title="Enforce consistent formatting" icon="paintbrush" href="/rules/multiline-blocks">
+    Keep JSDoc comment style consistent across your entire codebase.
+  </Card>
+  <Card title="TypeScript-aware rules" icon="code" href="/guides/typescript">
+    Use rules tailored for TypeScript files — disable redundant type annotations automatically.
+  </Card>
+</CardGroup>
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+## Get started in 3 steps
 
-## Need inspiration?
+<Steps>
+  <Step title="Install the plugin">
+    Add eslint-plugin-jsdoc to your project as a dev dependency.
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+    ```bash
+    npm install --save-dev eslint-plugin-jsdoc
+    ```
+  </Step>
+  <Step title="Add a preset config">
+    Use a recommended preset in your ESLint flat config file.
+
+    ```js eslint.config.js
+    import jsdoc from 'eslint-plugin-jsdoc';
+
+    export default [
+      jsdoc.configs['flat/recommended'],
+    ];
+    ```
+  </Step>
+  <Step title="Run ESLint">
+    Run ESLint to start catching JSDoc issues in your code.
+
+    ```bash
+    npx eslint .
+    ```
+  </Step>
+</Steps>
+
+<Note>
+  eslint-plugin-jsdoc supports ESLint 7 through 10, with full flat config support for ESLint 9+. Node.js 20.19+, 22.13+, or 24+ is required.
+</Note>

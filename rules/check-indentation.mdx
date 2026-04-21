@@ -1,0 +1,166 @@
+---
+title: "check-indentation: prevent extra padding inside JSDoc blocks"
+description: "Reports invalid indentation inside JSDoc comments, ensuring descriptions and tag content are not padded with extra leading spaces."
+---
+
+The `check-indentation` rule flags unexpected indentation (extra leading spaces) inside JSDoc comment blocks. A description that is accidentally indented, or tag content that has extra padding, is reported and should be aligned flush with the `*` delimiter. Content inside Markdown fenced code blocks is automatically excluded from checking.
+
+## Rule details
+
+| | |
+|---|---|
+| Recommended | no |
+| Fixable | no |
+| Rule name | `"jsdoc/check-indentation"` |
+
+## Options
+
+<ParamField body="excludeTags" type="string[]" default='["example"]'>
+  Tags whose content is excluded from indentation checking. By default, `@example` blocks are excluded so that code samples with intentional indentation do not trigger false positives.
+
+  Set to `[]` to check all tags including `@example`. Add additional tag names (e.g., `"returns"`) to exclude their content from checking.
+</ParamField>
+
+<ParamField body="allowIndentedSections" type="boolean" default="false">
+  When `true`, allows content that is consistently indented as part of a structured section—such as bullet list continuations. The first line of the main description and all tag lines are still checked. Inconsistent indentation (where the level changes mid-section) is still reported.
+</ParamField>
+
+## Examples
+
+<Tabs>
+  <Tab title="Incorrect">
+    ```js
+    // Extra spaces after the asterisk on the opening line
+    /**  foo */
+    function quux () {}
+
+    // Indented continuation in a tag description
+    /**
+     * foo
+     *
+     * @param bar
+     *  baz
+     */
+    function quux () {}
+
+    // Indented description text
+    /**
+     * Foo
+     *   bar
+     */
+    class Moo {}
+
+    // @returns indented — excludeTags does not include "returns"
+    /**
+     * foo
+     *
+     * @example
+     *   aaaa
+     * @returns
+     *   eeee
+     */
+    function quux () {}
+    ```
+  </Tab>
+  <Tab title="Correct">
+    ```js
+    // No extra indentation
+    /**
+     * foo
+     *
+     * @param bar
+     * baz
+     */
+    function quux () {}
+
+    // @example content excluded by default — indentation is not reported
+    /**
+     * foo
+     *
+     * @example
+     * anArray.filter((a) => {
+     *   return a.b;
+     * });
+     */
+    function quux () {}
+
+    // Markdown code block content is always excluded
+    /**
+     * foo
+     * ```html
+     * <section>
+     *   <title>test</title>
+     * </section>
+     * ```
+     * @returns eeee
+     */
+    function quux () {}
+    ```
+  </Tab>
+</Tabs>
+
+### Using `allowIndentedSections`
+
+```js
+// ✅ Bullet list with indented continuation — allowed
+/**
+ * Foobar
+ *
+ * This method does the following things:
+ * - foo...
+ *   this is the first step
+ * - bar
+ *   this is the second step
+ */
+
+// ❌ Tag lines are still checked even with allowIndentedSections: true
+/**
+ *   @param {number} val Still disallowed
+ */
+```
+
+### Excluding additional tags
+
+```js
+// ✅ Both @example and @returns excluded from indentation check
+/**
+ * foo
+ *
+ * @example
+ * anArray.filter((a) => {
+ *   return a.b;
+ * });
+ * @returns
+ *   eeee
+ */
+function quux () {}
+// "jsdoc/check-indentation": ["warn", {"excludeTags":["example","returns"]}]
+```
+
+## Configuration
+
+```js
+// eslint.config.js
+import jsdoc from "eslint-plugin-jsdoc";
+
+export default [
+  {
+    plugins: { jsdoc },
+    rules: {
+      // Default — exclude @example blocks from checking
+      "jsdoc/check-indentation": "warn",
+
+      // Check all tags including @example
+      "jsdoc/check-indentation": ["warn", {
+        excludeTags: [],
+      }],
+
+      // Allow structured indentation (bullet lists), exclude @example and @returns
+      "jsdoc/check-indentation": ["warn", {
+        allowIndentedSections: true,
+        excludeTags: ["example", "returns"],
+      }],
+    },
+  },
+];
+```

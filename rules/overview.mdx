@@ -1,0 +1,160 @@
+---
+title: "JSDoc linting rules — complete reference"
+description: "Complete reference for all 66+ eslint-plugin-jsdoc rules, organized by category: validation, requirements, stylistic, and TypeScript-specific rules."
+keywords: ["eslint", "jsdoc", "rules", "linting", "documentation"]
+---
+
+`eslint-plugin-jsdoc` provides over 66 rules for validating, enforcing, and styling JSDoc comments in JavaScript and TypeScript projects.
+
+Rules marked with ✓ are included in the `recommended` configuration. Rules marked with 🔧 support auto-fixing via `--fix`.
+
+## Rule categories
+
+<CardGroup cols={2}>
+  <Card title="Validation" icon="shield-check" href="/rules/check-access">
+    Rules that check the correctness of JSDoc tag values, types, names, and structure.
+  </Card>
+  <Card title="Requirements" icon="list-checks" href="/rules/require-jsdoc">
+    Rules that enforce the presence of JSDoc comments and specific tags.
+  </Card>
+  <Card title="Stylistic" icon="paintbrush" href="/rules/multiline-blocks">
+    Rules that enforce consistent formatting and style in JSDoc comments.
+  </Card>
+  <Card title="TypeScript" icon="file-code" href="/rules/no-types">
+    Rules specific to TypeScript projects, including type system redundancy checks.
+  </Card>
+</CardGroup>
+
+## Validation rules
+
+These rules verify that the content and structure of JSDoc tags are correct.
+
+| Rule | Description | ✓ | 🔧 |
+|------|-------------|---|---|
+| [check-access](/rules/check-access) | Validates `@access` tag values and prevents mixing access-control tags | ✓ | |
+| [check-alignment](/rules/check-alignment) | Reports invalid alignment of JSDoc block asterisks | ✓ | 🔧 |
+| [check-param-names](/rules/check-param-names) | Checks `@param` names match function parameter names | ✓ | 🔧 |
+| [check-property-names](/rules/check-property-names) | Checks `@property` names are not duplicated and have defined roots | ✓ | 🔧 |
+| [check-tag-names](/rules/check-tag-names) | Reports invalid JSDoc block tag names | ✓ | 🔧 |
+| [check-types](/rules/check-types) | Reports invalid type casing and enforces preferred type names | ✓ | 🔧 |
+| [check-values](/rules/check-values) | Validates values of `@version`, `@since`, `@license`, `@author`, and more | ✓ | |
+| [valid-types](/rules/valid-types) | Requires all types and namepaths to be syntactically valid | ✓ | |
+| check-examples | **(deprecated)** Validates JavaScript code within `@example` tags | | |
+| [check-indentation](/rules/check-indentation) | Reports invalid padding inside JSDoc blocks | | |
+| [check-line-alignment](/rules/check-line-alignment) | Reports invalid alignment of JSDoc block lines | | 🔧 |
+| check-syntax | Reports syntax not valid for the configured mode | | |
+| check-template-names | Checks that `@template` names are actually used in type aliases | | |
+| [no-undefined-types](/rules/no-undefined-types) | Prohibits types not specified as globals or within `@typedef` | ✓ | |
+
+## Requirements rules
+
+These rules enforce the presence of JSDoc comments and specific tags.
+
+| Rule | Description | ✓ | 🔧 |
+|------|-------------|---|---|
+| [require-jsdoc](/rules/require-jsdoc) | Checks for the presence of JSDoc comments on functions and other contexts | ✓ | 🔧 |
+| [require-param](/rules/require-param) | Requires all function parameters to be documented with `@param` | ✓ | 🔧 |
+| require-param-description | Requires each `@param` tag to have a description | ✓ | 🔧 |
+| require-param-name | Requires all `@param` tags to have names | ✓ | |
+| require-param-type | Requires each `@param` tag to have a type | ✓ | 🔧 |
+| [require-returns](/rules/require-returns) | Requires return values to be documented with `@returns` | ✓ | 🔧 |
+| require-returns-check | Requires a return statement if `@returns` is specified | ✓ | |
+| require-returns-description | Requires the `@returns` tag to have a description | ✓ | |
+| require-returns-type | Requires `@returns` to have a type value | ✓ | |
+| [require-yields](/rules/require-yields) | Requires yields to be documented with `@yields` | ✓ | |
+| require-yields-check | Validates that `@yields` tags correspond to actual yield statements | ✓ | |
+| require-yields-type | Requires a type for `@yields` tags | ✓ | |
+| [require-throws](/rules/require-throws) | Requires `@throws` tags on functions that throw | | |
+| require-throws-type | Requires a type for `@throws` tags | ✓ | |
+| require-property | Requires `@property` when `@typedef` or `@namespace` type is a plain object | ✓ | 🔧 |
+| require-property-description | Requires each `@property` tag to have a description | ✓ | |
+| require-property-name | Requires all `@property` tags to have names | ✓ | |
+| require-property-type | Requires each `@property` tag to have a type value | ✓ | |
+| [require-description](/rules/require-description) | Requires that all functions have a description | | |
+| [require-example](/rules/require-example) | Requires that all functions have examples | | |
+| [require-file-overview](/rules/require-file-overview) | Checks that all files have a `@file`/`@fileoverview` tag | | |
+| require-tags | Requires specific tags to be present | | |
+| require-template | Requires `@template` tags when type parameters are used | | |
+| require-rejects | Requires `@rejects` tags for Promise rejections | | |
+| require-asterisk-prefix | Requires each JSDoc line to start with `*` | | 🔧 |
+
+## Stylistic rules
+
+These rules enforce consistent formatting and appearance of JSDoc comments.
+
+| Rule | Description | ✓ | 🔧 |
+|------|-------------|---|---|
+| [multiline-blocks](/rules/multiline-blocks) | Controls how JSDoc blocks can be expressed as single or multiline | ✓ | 🔧 |
+| [tag-lines](/rules/tag-lines) | Enforces lines (or no lines) before, after, or between tags | ✓ | 🔧 |
+| [no-multi-asterisks](/rules/no-multi-asterisks) | Prevents use of multiple asterisks at the beginning of lines | ✓ | 🔧 |
+| no-defaults | Reports defaults being used on `@param` or `@default` | ✓ | 🔧 |
+| empty-tags | Checks that tags expected to be empty (e.g., `@abstract`) have no content | ✓ | 🔧 |
+| escape-inline-tags | Reports use of JSDoc tags in non-tag positions | ✓ | 🔧 |
+| implements-on-classes | Prohibits `@implements` on non-constructor functions | ✓ | |
+| [sort-tags](/rules/sort-tags) | Sorts tags by a specified sequence | | 🔧 |
+| [require-hyphen-before-param-description](/rules/require-hyphen-before-param-description) | Requires a hyphen before `@param` descriptions | | 🔧 |
+| no-bad-blocks | Reports multi-line comments that fail to meet JSDoc block criteria | | 🔧 |
+| no-blank-blocks | Removes empty blocks | | 🔧 |
+| no-blank-block-descriptions | Prevents empty lines in block descriptions when tags are present | | 🔧 |
+| lines-before-block | Enforces a minimum number of newlines before JSDoc comment blocks | | 🔧 |
+| match-description | Enforces a regular expression pattern on descriptions | | |
+| match-name | Reports tag name portions that match or don't match a given pattern | | 🔧 |
+| convert-to-jsdoc-comments | Converts non-JSDoc comments into JSDoc comments | | 🔧 |
+| text-escaping | Auto-escapes certain characters in block and tag descriptions | | 🔧 |
+| informative-docs | Reports doc comments that only restate their attached name | | |
+| no-missing-syntax | Reports when certain comment structures are always expected | | |
+| no-restricted-syntax | Reports when certain comment structures are present | | |
+| imports-as-dependencies | Reports `import()` statements pointing to unlisted packages | | |
+| prefer-import-tag | Prefers `@import` tags over inline `import()` statements | | 🔧 |
+
+## TypeScript-specific rules
+
+These rules are designed for TypeScript projects and address type system redundancy or TypeScript-specific patterns.
+
+| Rule | Description | ✓ | 🔧 |
+|------|-------------|---|---|
+| [no-types](/rules/no-types) | Reports types on `@param` or `@returns` (redundant with TypeScript) | On in TS | 🔧 |
+| [ts-prefer-function-type](/rules/ts-prefer-function-type) | Prefers function types over call signatures | | 🔧 |
+| [ts-method-signature-style](/rules/ts-method-signature-style) | Prefers function properties or method signatures | | 🔧 |
+| [ts-no-empty-object-type](/rules/ts-no-empty-object-type) | Warns against use of the empty object type | ✓ | |
+| ts-no-unnecessary-template-expression | Catches unnecessary template expressions | | 🔧 |
+| [type-formatting](/rules/type-formatting) | Formats JSDoc type values | | 🔧 |
+
+## Configuration
+
+To use the recommended configuration, add the following to your ESLint config:
+
+```javascript
+import jsdoc from 'eslint-plugin-jsdoc';
+
+export default [
+  jsdoc.configs['flat/recommended'],
+];
+```
+
+For TypeScript projects:
+
+```javascript
+import jsdoc from 'eslint-plugin-jsdoc';
+
+export default [
+  jsdoc.configs['flat/recommended-typescript'],
+];
+```
+
+To configure individual rules:
+
+```javascript
+import jsdoc from 'eslint-plugin-jsdoc';
+
+export default [
+  {
+    plugins: { jsdoc },
+    rules: {
+      'jsdoc/check-access': 'warn',
+      'jsdoc/check-alignment': 'error',
+      'jsdoc/check-param-names': ['error', { enableFixer: true }],
+    },
+  },
+];
+```

@@ -1,0 +1,143 @@
+---
+title: "Classic eslintrc configuration for JSDoc linting"
+description: "Set up eslint-plugin-jsdoc in legacy .eslintrc config files. Covers plugin registration, rule configuration, and preset extends strings."
+---
+
+The classic ESLint config format — `.eslintrc.json`, `.eslintrc.js`, `.eslintrc.yml`, and similar files — is supported for projects that have not yet migrated to flat config. All rules and settings work in eslintrc configs.
+
+## Setup
+
+<Steps>
+  <Step title="Register the plugin">
+    Add `"jsdoc"` to the `"plugins"` array in your `.eslintrc.*` file:
+
+    ```json .eslintrc.json
+    {
+      "plugins": ["jsdoc"]
+    }
+    ```
+  </Step>
+
+  <Step title="Enable rules or extend a preset">
+    Either extend one of the built-in preset configs, or enable individual rules manually.
+  </Step>
+</Steps>
+
+## Extending a preset
+
+The simplest way to get started is to extend one of the preset configs. This enables the recommended set of rules in one line:
+
+```json .eslintrc.json
+{
+  "extends": ["plugin:jsdoc/recommended"]
+}
+```
+
+You can then selectively add to or override the recommended rules:
+
+```json .eslintrc.json
+{
+  "extends": ["plugin:jsdoc/recommended"],
+  "rules": {
+    "jsdoc/require-description": "warn",
+    "jsdoc/check-indentation": "warn"
+  }
+}
+```
+
+### Available extends strings
+
+<AccordionGroup>
+  <Accordion title="JavaScript projects">
+    - `plugin:jsdoc/recommended` — Recommended rules, reported as warnings
+    - `plugin:jsdoc/recommended-error` — Same rules, reported as errors
+  </Accordion>
+  <Accordion title="TypeScript syntax (`.ts` files)">
+    For projects using TypeScript syntax (not just the TypeScript flavor of JSDoc). Adds `jsdoc/no-types` and disables type-related rules that are redundant when types are in TypeScript.
+
+    - `plugin:jsdoc/recommended-typescript` — Recommended rules for TypeScript, reported as warnings
+    - `plugin:jsdoc/recommended-typescript-error` — Same rules, reported as errors
+  </Accordion>
+  <Accordion title="TypeScript flavor in JavaScript (`.js` files)">
+    For projects using JavaScript source files with TypeScript-style JSDoc types (i.e., the default `"typescript"` mode). Disables `no-undefined-types` but keeps type annotations in JSDoc.
+
+    - `plugin:jsdoc/recommended-typescript-flavor` — Reported as warnings
+    - `plugin:jsdoc/recommended-typescript-flavor-error` — Reported as errors
+  </Accordion>
+  <Accordion title="TSDoc format (TypeDoc)">
+    Like `recommended-typescript`, but turns off `require-throws-type`, `require-yields-type`, and `require-next-type` since TSDoc does not support `{Type}` annotations on those tags.
+
+    - `plugin:jsdoc/recommended-tsdoc` — Reported as warnings
+    - `plugin:jsdoc/recommended-tsdoc-error` — Reported as errors
+  </Accordion>
+</AccordionGroup>
+
+## Enabling individual rules
+
+Instead of extending a preset, you can enable rules one by one. Each rule is prefixed with `jsdoc/`:
+
+```json .eslintrc.json
+{
+  "plugins": ["jsdoc"],
+  "rules": {
+    "jsdoc/check-access": "warn",
+    "jsdoc/check-alignment": "warn",
+    "jsdoc/check-param-names": "warn",
+    "jsdoc/check-tag-names": "warn",
+    "jsdoc/check-types": "warn",
+    "jsdoc/require-jsdoc": "warn",
+    "jsdoc/require-param": "warn",
+    "jsdoc/require-returns": "warn",
+    "jsdoc/valid-types": "warn"
+  }
+}
+```
+
+### Rule options
+
+Rules that accept options take them as a second element in an array after the error level:
+
+```json .eslintrc.json
+{
+  "plugins": ["jsdoc"],
+  "rules": {
+    "jsdoc/check-values": [
+      "error",
+      {
+        "allowedLicenses": ["MIT", "ISC"]
+      }
+    ],
+    "jsdoc/require-jsdoc": [
+      "warn",
+      {
+        "require": {
+          "FunctionDeclaration": true,
+          "MethodDefinition": false,
+          "ClassDeclaration": false
+        }
+      }
+    ]
+  }
+}
+```
+
+## Plugin-wide settings
+
+Settings that apply across all jsdoc rules are placed in the `"settings"` section under a `"jsdoc"` key:
+
+```json .eslintrc.json
+{
+  "plugins": ["jsdoc"],
+  "extends": ["plugin:jsdoc/recommended"],
+  "settings": {
+    "jsdoc": {
+      "mode": "typescript",
+      "tagNamePreference": {
+        "returns": "return"
+      }
+    }
+  }
+}
+```
+
+See [Settings](/configuration/settings) for a full reference of all available settings.

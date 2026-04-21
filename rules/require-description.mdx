@@ -1,0 +1,157 @@
+---
+title: "require-description: enforce descriptions in JSDoc blocks"
+description: "Require that JSDoc comment blocks include a non-empty description. Supports body-style text, @description tags, or either, across functions and custom contexts."
+---
+
+The `require-description` rule checks that JSDoc blocks on functions (and optionally other constructs) contain a non-empty description. It helps prevent placeholder-only documentation like `/** */` or `/** @param foo */` with no explanatory text.
+
+A description can be provided as:
+- **Body text**: free text written above the tags (the default style)
+- **`@description` tag**: an explicit `@description` (or `@desc`) tag with content
+
+## Rule details
+
+| | |
+|---|---|
+| Recommended | No |
+| Fixable | No |
+| Rule name | `"jsdoc/require-description"` |
+| Tag aliases | `@desc` |
+
+## Options
+
+### `descriptionStyle`
+
+Controls which style of description is accepted:
+
+| Value | Behavior |
+|---|---|
+| `"body"` (default) | Requires text in the block body above the tags |
+| `"tag"` | Requires a `@description` tag with content |
+| `"any"` | Accepts either style |
+
+When `descriptionStyle` is `"body"` and a `@description` or `@desc` tag is present, the rule reports an error and suggests removing the tag to use plain block text instead.
+
+### `contexts`
+
+An array of AST context strings (or objects with `context` and `comment` properties) where the rule should apply. Overrides the default contexts (`ArrowFunctionExpression`, `FunctionDeclaration`, `FunctionExpression`). Set to `"any"` to apply to any JSDoc block throughout your files.
+
+Useful for extending checks to `ClassDeclaration`, `TSInterfaceDeclaration`, `ObjectExpression`, etc.
+
+### `checkConstructors`
+
+Whether to require a description on constructors. Defaults to `true`.
+
+### `checkGetters`
+
+Whether to require a description on getter methods. Defaults to `true`.
+
+### `checkSetters`
+
+Whether to require a description on setter methods. Defaults to `true`.
+
+### `exemptedBy`
+
+Array of tag names whose presence exempts the block from this rule. Defaults to `["inheritdoc"]`.
+
+## Examples
+
+<Tabs>
+  <Tab title="Incorrect">
+    ```javascript
+    /**
+     *
+     */
+    function processOrder(order) {
+      return order.total * 1.1;
+    }
+    // "jsdoc/require-description": ["error", { "descriptionStyle": "body" }]
+    // Message: Missing JSDoc block description.
+
+    /**
+     * @description
+     */
+    function calculateTax(amount) {
+      return amount * 0.2;
+    }
+    // "jsdoc/require-description": ["error", { "descriptionStyle": "tag" }]
+    // Message: Missing JSDoc @description description.
+
+    /**
+     *
+     */
+    class OrderService {}
+    // "jsdoc/require-description": ["error", { "contexts": ["ClassDeclaration"] }]
+    // Message: Missing JSDoc block description.
+    ```
+  </Tab>
+  <Tab title="Correct">
+    ```javascript
+    /**
+     * Processes an order and applies a markup.
+     * @param {object} order - The order to process.
+     * @returns {number} The total with markup.
+     */
+    function processOrder(order) {
+      return order.total * 1.1;
+    }
+
+    /**
+     * @description Calculates the tax amount for a given value.
+     * @param {number} amount - Pre-tax amount.
+     * @returns {number} Tax amount.
+     */
+    function calculateTax(amount) {
+      return amount * 0.2;
+    }
+    // "jsdoc/require-description": ["error", { "descriptionStyle": "tag" }]
+
+    /**
+     * Manages order lifecycle operations.
+     */
+    class OrderService {}
+    // "jsdoc/require-description": ["error", { "contexts": ["ClassDeclaration"] }]
+
+    /**
+     *
+     */
+    class EmptyClass {}
+    // "jsdoc/require-description": ["error", { "contexts": ["FunctionDeclaration"] }]
+    // Class not in checked context — passes.
+    ```
+  </Tab>
+</Tabs>
+
+## Configuration example
+
+```javascript
+// eslint.config.js
+import jsdoc from "eslint-plugin-jsdoc";
+
+export default [
+  {
+    plugins: { jsdoc },
+    rules: {
+      "jsdoc/require-description": [
+        "warn",
+        {
+          descriptionStyle: "body",
+          checkConstructors: false,
+          checkGetters: true,
+          checkSetters: true,
+          contexts: [
+            "FunctionDeclaration",
+            "ArrowFunctionExpression",
+            "ClassDeclaration",
+          ],
+          exemptedBy: ["inheritdoc", "type"],
+        },
+      ],
+    },
+  },
+];
+```
+
+<Tip>
+  Set `descriptionStyle: "any"` if your team uses a mix of body descriptions and `@description` tags and you want to allow both styles without enforcing one.
+</Tip>

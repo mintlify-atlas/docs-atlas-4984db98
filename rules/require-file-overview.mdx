@@ -1,0 +1,143 @@
+---
+title: "require-file-overview: enforce file overview tags"
+description: "Require every file to have a @file, @fileoverview, or @overview JSDoc tag at the top of the file. Prevents duplicates and enforces correct tag positioning."
+---
+
+The `require-file-overview` rule enforces three things by default:
+
+1. All files have a `@file`, `@fileoverview`, or `@overview` tag.
+2. Duplicate file overview tags within a given file are reported.
+3. File overview tags must appear "at the beginning of the file" — meaning the tag is not preceded by anything other than a comment.
+
+## Rule details
+
+| | |
+|---|---|
+| Recommended | No |
+| Fixable | No |
+| Rule name | `"jsdoc/require-file-overview"` |
+| Tag aliases | `@fileoverview`, `@overview` |
+
+## Options
+
+### `tags`
+
+An object whose keys are tag names and whose values are configuration objects. This option overrides the default behavior. When omitted, the equivalent default is:
+
+```json
+{
+  "file": {
+    "mustExist": true,
+    "preventDuplicates": true,
+    "initialCommentsOnly": true
+  }
+}
+```
+
+Each tag configuration object supports three boolean keys (all default to `false` when `tags` is explicitly provided):
+
+| Key | Description |
+|---|---|
+| `mustExist` | Require at least one occurrence of the tag in the file |
+| `preventDuplicates` | Report if the tag appears more than once |
+| `initialCommentsOnly` | Report if the tag appears after any non-comment code |
+
+You can configure built-in file tags or any other whole-file tags such as `@license`, `@copyright`, `@author`, `@module`, or `@exports`.
+
+<Note>
+  Tag names in this configuration use the canonical JSDoc name. Use `"file"` even if you have configured `tagNamePreference` to use `"fileoverview"` — the configured alias will still be checked.
+</Note>
+
+## Examples
+
+<Tabs>
+  <Tab title="Incorrect">
+    ```javascript
+    // (empty file with no JSDoc block)
+    // Message: Missing @file
+
+    /**
+     *
+     */
+    function doWork() {}
+    // Message: Missing @file
+
+    /**
+     * @file First overview
+     */
+
+    /**
+     * @file Duplicate overview
+     */
+    // Message: Duplicate @file
+
+    function doWork() {}
+    /**
+     * @file Overview after code
+     */
+    // Message: @file should be at the beginning of the file
+    ```
+  </Tab>
+  <Tab title="Correct">
+    ```javascript
+    /**
+     * @file Handles user authentication flows.
+     */
+
+    function login(user) {}
+
+    /**
+     * @fileoverview Module for data transformation utilities.
+     */
+    // Settings: { "jsdoc": { "tagNamePreference": { "file": "fileoverview" } } }
+
+    // A comment before the @file tag is acceptable
+    /**
+     * @file Utility functions.
+     */
+    ```
+  </Tab>
+</Tabs>
+
+## Configuration example
+
+```javascript
+// eslint.config.js
+import jsdoc from "eslint-plugin-jsdoc";
+
+export default [
+  {
+    plugins: { jsdoc },
+    rules: {
+      // Default: require @file at the top of every file
+      "jsdoc/require-file-overview": "error",
+    },
+  },
+];
+```
+
+To also require a `@license` tag (anywhere in the file, only once):
+
+```javascript
+"jsdoc/require-file-overview": [
+  "error",
+  {
+    tags: {
+      file: {
+        mustExist: true,
+        preventDuplicates: true,
+        initialCommentsOnly: true,
+      },
+      license: {
+        mustExist: true,
+        preventDuplicates: true,
+        initialCommentsOnly: false,
+      },
+    },
+  },
+],
+```
+
+<Tip>
+  Combine `require-file-overview` with the `check-values` rule (using `allowedLicenses` or `licensePattern`) to enforce that a valid license identifier appears in every file's `@license` tag.
+</Tip>

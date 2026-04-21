@@ -1,0 +1,78 @@
+---
+title: 'ts-no-empty-object-type: disallow empty object type {}'
+description: 'Warns when {} is used as a type in JSDoc annotations, since in TypeScript it means any non-nullish value rather than an empty object.'
+keywords: ['eslint', 'jsdoc', 'ts-no-empty-object-type', 'typescript', 'empty object', 'type safety']
+---
+
+In TypeScript, `{}` does not mean "an empty object." It means **any value that is not `null` or `undefined`**. Using `{}` in a type annotation is almost always unintentional and usually indicates that the author wanted `object`, `Record<string, unknown>`, or a specific interface instead.
+
+This rule flags uses of the empty object type `{}` in JSDoc type annotations when running in TypeScript mode (`settings.jsdoc.mode: "typescript"`). It has no effect in other modes.
+
+## Rule details
+
+| | |
+|---|---|
+| Rule name | `jsdoc/ts-no-empty-object-type` |
+| Recommended | Yes (in TypeScript configs) |
+| Fixable | No |
+| Tags | All tags that may have a type position |
+| Context | Everywhere |
+| Settings | `mode` (only active when `"typescript"`) |
+
+## Options
+
+This rule has no options.
+
+## Examples
+
+<Tabs>
+  <Tab title="Incorrect">
+    ```ts
+    /**
+     * @param {{}} someName
+     */
+
+    /**
+     * @param {(string | {})} someName
+     */
+    ```
+  </Tab>
+  <Tab title="Correct">
+    ```ts
+    // Non-empty object type is fine
+    /**
+     * @param {{ a: string }} someName
+     */
+
+    // Intersection of non-empty types is fine
+    /**
+     * @param {({ a: string } & { b: number })} someName
+     */
+
+    // In non-TypeScript mode, {} is not flagged
+    /**
+     * @param {{}} someName
+     */
+    // Settings: { "jsdoc": { "mode": "jsdoc" } }
+    ```
+  </Tab>
+</Tabs>
+
+## Configuration
+
+```json
+{
+  "settings": {
+    "jsdoc": {
+      "mode": "typescript"
+    }
+  },
+  "rules": {
+    "jsdoc/ts-no-empty-object-type": "warn"
+  }
+}
+```
+
+<Note>
+  This rule is included in the TypeScript preset configs. If you use `{}` intentionally to mean "any non-nullish value," consider using `NonNullable<unknown>` or `object` to make the intent explicit.
+</Note>

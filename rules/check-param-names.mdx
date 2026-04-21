@@ -1,0 +1,250 @@
+---
+title: "check-param-names: validate @param tag names"
+description: "Ensures @param tag names match the actual function parameter names, including order, destructured properties, and rest parameters. Recommended and fixable."
+keywords: ["eslint", "jsdoc", "check-param-names", "parameters", "destructuring"]
+---
+
+The `check-param-names` rule ensures that `@param` tag names in JSDoc comments match the corresponding parameters in the function declaration. It also validates parameter order, detects duplicates, and checks destructured parameter documentation.
+
+## Rule details
+
+| | |
+|---|---|
+| Recommended | ✓ |
+| Fixable | 🔧 Yes—auto-removes duplicate `@param` entries (when `enableFixer` is `true`) |
+| Rule name | `"jsdoc/check-param-names"` |
+| Context | `ArrowFunctionExpression`, `FunctionDeclaration`, `FunctionExpression` |
+| Tags | `@param` (aliases: `@arg`, `@argument`) |
+
+## Destructuring
+
+By default, the rule does not report properties documented in JSDoc but absent from the function signature when the signature uses an object rest property, since those properties may be part of the rest:
+
+```javascript
+/**
+ * @param options
+ * @param options.foo
+ */
+function quux({ foo, ...extra }) {}
+// Valid by default—`extra` absorbs undocumented properties
+```
+
+Use the `checkRestProperty` option to require explicit documentation of rest properties.
+
+## Options
+
+<ParamField path="allowExtraTrailingParamDocs" type="boolean" default="false">
+  When `true`, allows extra `@param` definitions at the end of the list that
+  don't correspond to actual parameters—useful for documenting future or virtual
+  parameters.
+</ParamField>
+
+<ParamField path="checkDestructured" type="boolean" default="true">
+  Whether to check destructured parameter properties. Set to `false` to skip
+  validation of destructured object/array parameters entirely.
+</ParamField>
+
+<ParamField path="checkRestProperty" type="boolean" default="false">
+  When `true`, requires rest properties to be explicitly documented and reports
+  any extraneous properties that appear alongside a rest property.
+</ParamField>
+
+<ParamField path="checkTypesPattern" type="string" default="/^(?:[oO]bject|[aA]rray|PlainObject|Generic(?:Object|Array))$/v">
+  A regular expression pattern that determines which `@param` types trigger
+  destructuring checks. Only parameters whose type matches this pattern will
+  require their destructured properties to be documented.
+
+  For example, a parameter typed `{SVGRect}` would not require destructured
+  property docs by default, but `{object}` would.
+</ParamField>
+
+<ParamField path="disableExtraPropertyReporting" type="boolean" default="false">
+  When `true`, does not report documented properties that don't exist in the
+  destructured parameter. Useful if you want to document properties that are
+  available on the object but not destructured.
+</ParamField>
+
+<ParamField path="disableMissingParamChecks" type="boolean" default="false">
+  When `true`, skips checking for missing `@param` definitions. Still validates
+  that any params that are documented match the function signature.
+</ParamField>
+
+<ParamField path="enableFixer" type="boolean" default="false">
+  When `true`, enables auto-removal of duplicate `@param` entries. Duplicates
+  are identified by name only—the second occurrence is removed regardless of
+  whether type or description differs.
+</ParamField>
+
+<ParamField path="useDefaultObjectProperties" type="boolean" default="false">
+  When `true`, treats the keys of a plain object default value as if the
+  properties are destructured, allowing them to be documented.
+</ParamField>
+
+## Examples
+
+<Tabs>
+  <Tab title="Incorrect">
+```javascript
+/**
+ * @param Foo
+ */
+function quux(foo = 'FOO') {}
+// Message: Expected @param names to be "foo". Got "Foo".
+
+/**
+ * @param foo
+ * @param bar
+ */
+function quux(foo) {}
+// Message: @param "bar" does not match an existing function parameter.
+
+/**
+ * @param foo
+ * @param bar
+ */
+function quux(bar, foo) {}
+// Message: Expected @param names to be "bar, foo". Got "foo, bar".
+
+/**
+ * @param cfg
+ * @param cfg.foo
+ */
+function quux({ foo, bar }) {}
+// Message: Missing @param "cfg.bar"
+
+/**
+ * @param {Error} error Exit code
+ * @param {number} [code = 1] Exit code
+ */
+function quux(error, cde = 1) {}
+// Message: Expected @param names to be "error, cde". Got "error, code".
+```
+
+With `enableFixer: true`:
+
+```javascript
+/**
+ * @param foo
+ * @param foo
+ */
+function quux(foo) {}
+// Message: Duplicate @param "foo"
+// (The second @param foo is automatically removed)
+```
+  </Tab>
+  <Tab title="Correct">
+```javascript
+/**
+ * @param foo
+ */
+function quux(foo) {}
+
+/**
+ * @param foo
+ * @param bar
+ */
+function quux(foo, bar) {}
+
+/**
+ * @param foo
+ * @param foo.a
+ * @param foo.b
+ */
+function quux({ a, b }) {}
+
+/**
+ * @param {Error} error Exit code
+ * @param {number} [code = 1] Exit code
+ */
+function quux(error, code = 1) {}
+
+/**
+ * @param options
+ * @param options.foo
+ */
+function quux({ foo, ...extra }) {}
+// Valid: rest property absorbs the undocumented `extra`
+
+/**
+ * Assign the project to a list of employees.
+ * @param {object[]} employees - The employees who are responsible for the project.
+ * @param {string} employees[].name - The name of an employee.
+ * @param {string} employees[].department - The employee's department.
+ */
+function assign(employees) {}
+```
+
+With `checkRestProperty: true`:
+
+```javascript
+/**
+ * @param options
+ * @param options.foo
+ * @param options.extra
+ */
+function quux({ foo, ...extra }) {}
+// Valid: rest property is explicitly documented
+```
+
+With `checkDestructured: false`:
+
+```javascript
+/**
+ * @param foo
+ * @param root
+ */
+function quux(foo, { bar }) {}
+// Valid: destructured parameter not checked
+```
+  </Tab>
+</Tabs>
+
+## TypeScript support
+
+The rule works with TypeScript-style parameters, including `this` parameters (which are skipped) and TypeScript class constructor parameters:
+
+```typescript
+export class SomeClass {
+  /**
+   * @param options
+   * @param options.foo
+   * @param options.bar
+   */
+  constructor(options: { foo: string; bar: string }) {}
+}
+```
+
+Rest parameters in array destructuring patterns are also supported:
+
+```typescript
+/**
+ * @param type Type
+ * @param arg Arg
+ */
+export function fn(...[type, arg]: FnArgs): void {}
+```
+
+## Configuration
+
+```javascript
+// eslint.config.js
+import jsdoc from 'eslint-plugin-jsdoc';
+
+export default [
+  {
+    plugins: { jsdoc },
+    rules: {
+      'jsdoc/check-param-names': ['warn', {
+        checkDestructured: true,
+        checkRestProperty: false,
+        enableFixer: true,
+        disableMissingParamChecks: false,
+      }],
+    },
+  },
+];
+```
+
+<Note>
+This rule is included in `jsdoc.configs['flat/recommended']` and reports at the `warn` level by default.
+</Note>

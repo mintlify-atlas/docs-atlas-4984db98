@@ -1,0 +1,141 @@
+---
+title: "require-example: enforce @example tags in JSDoc blocks"
+description: "Require that all documented functions have at least one @example tag with a non-empty description. Useful for enforcing usage examples in public APIs."
+---
+
+The `require-example` rule checks that every JSDoc block on a function includes at least one `@example` tag, and that each `@example` tag has a non-empty description. It is particularly useful for ensuring public API documentation always includes a usage example.
+
+## Rule details
+
+| | |
+|---|---|
+| Recommended | No |
+| Fixable | 🔧 (adds an empty `@example` tag, but the missing description still triggers an error) |
+| Rule name | `"jsdoc/require-example"` |
+
+## Options
+
+### `contexts`
+
+An array of AST context strings (or objects with `context` and `comment` properties) where the rule should apply. Overrides the default contexts (`ArrowFunctionExpression`, `FunctionDeclaration`, `FunctionExpression`). Set to `"any"` to apply to any JSDoc block in your files, or use specific node types like `ClassDeclaration` to extend coverage.
+
+### `checkConstructors`
+
+Whether to require `@example` tags on constructors. Defaults to `true`.
+
+### `checkGetters`
+
+Whether to require `@example` tags on getter methods. Defaults to `false`.
+
+### `checkSetters`
+
+Whether to require `@example` tags on setter methods. Defaults to `false`.
+
+### `enableFixer`
+
+Whether to enable the fixer that inserts a blank `@example` block. Note that the fixer only adds the tag — the rule will continue to report a missing description until one is added manually. Defaults to `true`.
+
+### `exemptedBy`
+
+Array of tag names whose presence exempts the block from this rule. Defaults to `["inheritdoc"]`.
+
+### `exemptNoArguments`
+
+When `true`, functions with no parameters are not required to have an `@example` tag. Defaults to `false`.
+
+## Examples
+
+<Tabs>
+  <Tab title="Incorrect">
+    ```javascript
+    /**
+     *
+     */
+    function formatCurrency(amount, currency) {
+      return `${amount} ${currency}`;
+    }
+    // Message: Missing JSDoc @example declaration.
+
+    /**
+     * @example
+     */
+    function formatCurrency(amount, currency) {
+      return `${amount} ${currency}`;
+    }
+    // Message: Missing JSDoc @example description.
+
+    /**
+     *
+     */
+    class PaymentProcessor {}
+    // "jsdoc/require-example": ["error", { "contexts": ["ClassDeclaration"] }]
+    // Message: Missing JSDoc @example declaration.
+    ```
+  </Tab>
+  <Tab title="Correct">
+    ```javascript
+    /**
+     * Formats an amount with a currency code.
+     * @param {number} amount - The numeric amount.
+     * @param {string} currency - ISO 4217 currency code.
+     * @returns {string} Formatted currency string.
+     * @example
+     * formatCurrency(10.5, 'USD'); // "10.5 USD"
+     */
+    function formatCurrency(amount, currency) {
+      return `${amount} ${currency}`;
+    }
+
+    /**
+     * @example <caption>Valid usage</caption>
+     * quux(); // does something useful
+     *
+     * @example <caption>Invalid usage</caption>
+     * quux('random unwanted arg'); // results in an error
+     */
+    function quux() {}
+
+    /**
+     * @inheritdoc
+     */
+    function overridden(foo) {}
+
+    /**
+     *
+     */
+    function noArgs() {}
+    // "jsdoc/require-example": ["error", { "exemptNoArguments": true }]
+    ```
+  </Tab>
+</Tabs>
+
+## Configuration example
+
+```javascript
+// eslint.config.js
+import jsdoc from "eslint-plugin-jsdoc";
+
+export default [
+  {
+    plugins: { jsdoc },
+    rules: {
+      "jsdoc/require-example": [
+        "warn",
+        {
+          checkConstructors: false,
+          checkGetters: false,
+          checkSetters: false,
+          enableFixer: true,
+          exemptedBy: ["inheritdoc", "type"],
+          exemptNoArguments: false,
+          contexts: ["FunctionDeclaration", "ClassDeclaration"],
+        },
+      ],
+    },
+  },
+];
+```
+
+<Tip>
+  Use `@example <caption>Title</caption>` to label multiple examples within a single JSDoc block. Captions are rendered by documentation generators like JSDoc and TypeDoc.
+</Tip>

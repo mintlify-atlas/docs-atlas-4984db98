@@ -1,0 +1,306 @@
+---
+title: "valid-types: require valid JSDoc types and namepaths"
+description: "Requires types and namepaths in JSDoc tags to be syntactically valid. Parsing is controlled by the mode setting: jsdoc, typescript, closure, or permissive."
+keywords: ["eslint", "jsdoc", "valid-types", "type syntax", "namepath", "typescript", "closure"]
+---
+
+The `valid-types` rule requires all types and namepaths in JSDoc tags to be syntactically valid. It uses [jsdoc-type-pratt-parser](https://github.com/jsdoc-type-pratt-parser/jsdoc-type-pratt-parser) to parse type expressions, and the `settings.jsdoc.mode` setting to determine which dialect to use.
+
+## Rule details
+
+| | |
+|---|---|
+| Recommended | ✓ |
+| Fixable | No |
+| Rule name | `"jsdoc/valid-types"` |
+| Context | Everywhere |
+| Settings | `mode`, `structuredTags` |
+
+## What is validated
+
+### Type portions (within `{...}`)
+
+Tags with **required** types: `@type`, `@implements`
+
+Tags with **optional** types: `@enum`, `@member`, `@typedef`, `@augments`, `@class`, `@constant`, `@module`, `@namespace`, `@throws`, `@yields`, `@modifies`, `@param`, `@property`, `@returns`
+
+Tags with types available in **Closure only**: `@export`, `@package`, `@private`, `@protected`, `@public`, `@static`, `@template`
+
+### Namepath portions (after tag name)
+
+**Namepath-defining tags** (namepath required): `@event`, `@callback`, `@exports`, `@external`, `@host`, `@name`, `@typedef` (JSDoc only), `@template` (TypeScript/Closure only)
+
+**Name-defining tags** (namepath optional or expressed elsewhere): `@class`, `@constant`, `@function`, `@interface`, `@member`, `@mixin`, `@namespace`, `@module`
+
+**Namepath-pointing tags** (must point to existing namepath): `@alias`, `@augments`, `@extends`, `@lends`, `@memberof`, `@memberof!`, `@mixes`, `@requires`, `@this`
+
+**Tags with free text or namepath**: `@see`
+
+**Tags with multiple namepaths**: `@borrows` (must use the form `<namepath> as <namepath>`)
+
+## Options
+
+<ParamField path="allowEmptyNamepaths" type="boolean" default="true">
+  When `false`, disallows empty namepaths for tags in groups 2 and 4 (tags that
+  may optionally have a namepath). Groups 1 and 3 always fail when empty
+  regardless of this setting.
+
+  Use `settings.jsdoc.structuredTags` with `required: ["name"]` to require
+  namepaths on a tag-by-tag basis instead.
+</ParamField>
+
+## Parsing modes
+
+The rule behavior depends on `settings.jsdoc.mode`:
+
+- **`jsdoc`** — Strict JSDoc 3 type syntax
+- **`typescript`** — TypeScript type syntax (allows generics like `Array<T>`, tuple types `[number, string]`, etc.)
+- **`closure`** — Closure Compiler type syntax
+- **`permissive`** — Most lenient; accepts a wide range of syntax
+
+## Examples
+
+<Tabs>
+  <Tab title="Incorrect">
+```javascript
+/**
+ * @param {Array<string} foo
+ */
+function quux() {}
+// Message: Syntax error in type: Array<string
+
+/**
+ * @memberof module:namespace.SomeClass<~
+ */
+function quux() {}
+// Message: Syntax error in namepath: module:namespace.SomeClass<~
+
+/**
+ * @borrows foo% as bar
+ */
+function quux() {}
+// Message: Syntax error in namepath: foo%
+
+/**
+ * @borrows foo
+ */
+function quux() {}
+// Message: @borrows must have an "as" expression. Found ""
+
+/**
+ * @constant {str%ng}
+ */
+const FOO = 'foo';
+// Message: Syntax error in type: str%ng
+
+/**
+ * @typedef {string} UserStr%ng
+ */
+// Message: Syntax error in name: UserStr%ng
+
+/**
+ * @type
+ */
+let foo;
+// Message: Tag @type must have a type.
+
+/**
+ * @param {string} [name=]
+ */
+function quux() {}
+// Message: Invalid name: empty default value
+
+/**
+ * @param {string} [name==]
+ */
+function quux() {}
+// Message: Invalid name: invalid default value syntax
+```
+
+With `allowEmptyNamepaths: false`:
+
+```javascript
+/**
+ * @callback
+ */
+function quux() {}
+// Message: Tag @callback must have a name/namepath.
+```
+
+In `closure` mode:
+
+```javascript
+/**
+ * @define
+ */
+function quux() {}
+// Settings: { "jsdoc": { "mode": "closure" } }
+// Message: Tag @define must have a type in "closure" mode.
+
+/**
+ * @interface name
+ */
+// Settings: { "jsdoc": { "mode": "closure" } }
+// Message: @interface should not have a name in "closure" mode.
+
+/**
+ * @private {SomeType}
+ */
+function quux() {}
+// Settings: { "jsdoc": { "mode": "jsdoc" } }
+// Message: @private should not have a bracketed type in "jsdoc" mode.
+```
+
+Inline tags:
+
+```javascript
+/**
+ * An inline {@link} tag without content.
+ */
+// Message: Inline tag "link" missing content
+```
+  </Tab>
+  <Tab title="Correct">
+```javascript
+/**
+ * @param {Array<string>} foo
+ */
+function quux() {}
+
+/**
+ * @param {string} foo
+ */
+function quux() {}
+
+/**
+ * @param foo
+ */
+function quux() {}
+
+/**
+ * @borrows foo as bar
+ */
+function quux() {}
+
+/**
+ * @borrows foo as #bar
+ */
+function quux() {}
+
+/**
+ * @callback foo
+ */
+function quux() {}
+
+/**
+ * @typedef {number | string} UserDefinedType
+ */
+
+/**
+ * @extends Foo
+ */
+class Bar {}
+
+/**
+ * @extends Foo<String>
+ */
+class Bar {}
+
+/**
+ * @modifies {foo | bar}
+ */
+function quux(foo, bar, baz) {}
+```
+
+TypeScript-specific types:
+
+```javascript
+/**
+ * Foo function.
+ *
+ * @param {[number, string]} bar - The bar array.
+ */
+function foo(bar) {}
+// Settings: { "jsdoc": { "mode": "typescript" } }
+
+/**
+ * @param {typeof obj["level1"]["level2"]} foo
+ * @param {Parameters<testFunc>[0]} ghi
+ * @param {{[key: string]: string}} hjk
+ */
+function quux() {}
+// Settings: { "jsdoc": { "mode": "typescript" } }
+
+/**
+ * @template {string} K - K must be a string or string literal
+ * @template {{ serious: string }} Seriousalizable
+ * @param {K} key
+ * @param {Seriousalizable} object
+ */
+function seriousalize(key, object) {}
+// Settings: { "jsdoc": { "mode": "typescript" } }
+```
+
+Closure-specific types:
+
+```javascript
+/**
+ * @this {Navigator}
+ */
+function quux() {}
+// Settings: { "jsdoc": { "mode": "closure" } }
+
+/**
+ * @define {boolean}
+ */
+function quux() {}
+// Settings: { "jsdoc": { "mode": "closure" } }
+
+/**
+ * @suppress {visibility|underscore}
+ */
+function quux() {}
+// Settings: { "jsdoc": { "mode": "closure" } }
+```
+  </Tab>
+</Tabs>
+
+### Custom tags with `structuredTags`
+
+The `settings.jsdoc.structuredTags` setting lets you define structure expectations for custom tags. The `valid-types` rule will validate those tags accordingly:
+
+```javascript
+/**
+ * @see foo%
+ */
+function quux() {}
+// Settings: { "jsdoc": { "structuredTags": { "see": { "name": "namepath-referencing", "required": ["name"] } } } }
+// Message: Syntax error in namepath: foo%
+```
+
+## Configuration
+
+```javascript
+// eslint.config.js
+import jsdoc from 'eslint-plugin-jsdoc';
+
+export default [
+  {
+    plugins: { jsdoc },
+    rules: {
+      'jsdoc/valid-types': ['warn', {
+        allowEmptyNamepaths: true,
+      }],
+    },
+    settings: {
+      jsdoc: {
+        mode: 'typescript', // or 'jsdoc', 'closure', 'permissive'
+      },
+    },
+  },
+];
+```
+
+<Note>
+This rule is included in `jsdoc.configs['flat/recommended']` and reports at the `warn` level by default.
+</Note>

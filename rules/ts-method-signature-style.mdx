@@ -1,0 +1,126 @@
+---
+title: 'ts-method-signature-style: enforce method or property style'
+description: 'Enforces a consistent style for method signatures in JSDoc object types, choosing between method syntax and function property syntax.'
+keywords: ['eslint', 'jsdoc', 'ts-method-signature-style', 'typescript', 'method signature', 'function property']
+---
+
+In TypeScript-style JSDoc types, methods on objects can be written in two ways:
+
+- **Method style**: `{ func(arg: string): number }` — uses a method signature
+- **Property style**: `{ func: (arg: string) => number }` — uses a function property
+
+These forms are not semantically identical in TypeScript. The property style is more restrictive: it does not allow `this` covariance and works better with TypeScript's type checking. The method style allows overloads by repeating the method name.
+
+This rule is inspired by `typescript-eslint`'s [`method-signature-style`](https://typescript-eslint.io/rules/method-signature-style/) rule. Refer to that rule's documentation for the full rationale.
+
+## Rule details
+
+| | |
+|---|---|
+| Rule name | `jsdoc/ts-method-signature-style` |
+| Recommended | No |
+| Fixable | Yes — converts between method and property style automatically |
+| Tags | All tags that may have a type position |
+| Context | Everywhere |
+
+## Options
+
+The first argument is a string that selects the enforced style:
+
+<ParamField path="[0]" type='"property" | "method"' default='"property"'>
+  - `"property"` *(default)* — requires function property style: `{ func: (arg: string) => number }`
+  - `"method"` — requires method signature style: `{ func(arg: string): number }`
+</ParamField>
+
+The second argument is an options object:
+
+<ParamField path="[1].enableFixer" type="boolean" default="true">
+  Whether to enable the automatic fixer. Set to `false` to report errors without applying fixes.
+</ParamField>
+
+## Examples
+
+<Tabs>
+  <Tab title="Incorrect (property mode, the default)">
+    ```ts
+    // Method signature found — should be a function property
+    /**
+     * @param {{
+     *   func(arg: string): number
+     * }} someName
+     */
+    ```
+  </Tab>
+  <Tab title="Correct (property mode, the default)">
+    ```ts
+    // Function property — preferred in property mode
+    /**
+     * @param {{
+     *   func: (arg: string) => number
+     * }} someName
+     */
+
+    // Overloaded form uses intersection — also acceptable
+    /**
+     * @param {{
+     *   func: ((arg: number) => void) &
+     *     ((arg: string) => void)
+     * }} someName
+     */
+    ```
+  </Tab>
+</Tabs>
+
+<Tabs>
+  <Tab title="Incorrect (method mode)">
+    ```ts
+    // Function property found — should be a method signature
+    /**
+     * @param {{
+     *   func: (arg: string) => number
+     * }} someName
+     */
+    // "jsdoc/ts-method-signature-style": ["warn", "method"]
+    ```
+  </Tab>
+  <Tab title="Correct (method mode)">
+    ```ts
+    /**
+     * @param {{
+     *   func(arg: string): number
+     * }} someName
+     */
+    // "jsdoc/ts-method-signature-style": ["warn", "method"]
+    ```
+  </Tab>
+</Tabs>
+
+## Configuration
+
+Enforce function property style (default):
+
+```json
+{
+  "jsdoc/ts-method-signature-style": "warn"
+}
+```
+
+Enforce method signature style:
+
+```json
+{
+  "jsdoc/ts-method-signature-style": ["warn", "method"]
+}
+```
+
+Disable the fixer:
+
+```json
+{
+  "jsdoc/ts-method-signature-style": ["warn", "property", { "enableFixer": false }]
+}
+```
+
+<Note>
+  This rule is not included in any preset config by default. The `"property"` style aligns with TypeScript's stricter type checking semantics and is generally the recommended approach.
+</Note>

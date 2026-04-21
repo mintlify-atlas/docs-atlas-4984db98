@@ -1,0 +1,254 @@
+---
+title: "check-values: validate version, license, and author tags"
+description: "Validates @version, @since, @license, @author, @kind, and @import tag values. Checks semver format, SPDX license strings, and author name conventions."
+keywords: ["eslint", "jsdoc", "check-values", "semver", "SPDX", "license", "author"]
+---
+
+The `check-values` rule validates the content of several specific JSDoc tags, enforcing correct value formats such as semver versions, valid SPDX license identifiers, and known `@kind` values.
+
+## Rule details
+
+| | |
+|---|---|
+| Recommended | ✓ |
+| Fixable | No |
+| Rule name | `"jsdoc/check-values"` |
+| Context | Everywhere |
+| Tags | `@version`, `@since`, `@kind`, `@license`, `@author`, `@variation`, `@import` |
+| Settings | `tagNamePreference` |
+
+## Tags checked
+
+1. **`@version`** — Must contain a valid [semver](https://semver.org/) version string (e.g., `1.2.3`).
+2. **`@since`** — Same as `@version`—requires a valid semver string.
+3. **`@license`** — Must be a valid [SPDX identifier](https://spdx.org/licenses/) or one of the values in `allowedLicenses`.
+4. **`@author`** — Must have a non-whitespace value; optionally restricted to values listed in `allowedAuthors`.
+5. **`@variation`** — If `numericOnlyVariation` is enabled, must be a non-negative integer.
+6. **`@kind`** — Must be one of: `class`, `constant`, `event`, `external`, `file`, `function`, `member`, `mixin`, `module`, `namespace`, `typedef`.
+7. **`@import`** — In TypeScript mode, must follow valid ES import syntax.
+
+## Options
+
+<ParamField path="allowedAuthors" type="string[]">
+  An array of permitted author values. When present, `@author` values must
+  exactly match one of these strings. When absent, any non-whitespace value
+  is accepted.
+
+  ```json
+  { "allowedAuthors": ["Alice", "Bob"] }
+  ```
+</ParamField>
+
+<ParamField path="allowedLicenses" type="string[] | boolean">
+  An array of permitted license strings, or `true` to allow any license text.
+  When set to an array, these values are used instead of SPDX identifiers.
+  When absent, only valid SPDX expressions are accepted.
+
+  ```json
+  { "allowedLicenses": ["MIT", "GPL-3.0", "Proprietary"] }
+  ```
+</ParamField>
+
+<ParamField path="licensePattern" type="string" default="/([^\\n\\r]*)/gv">
+  A regular expression string that extracts the portion of the `@license`
+  value to validate. The first capturing group, if present, is what gets
+  checked. Defaults to matching everything before a line break.
+
+  ```json
+  { "licensePattern": "/^([^\\n]+)\\nCopyright/" }
+  ```
+</ParamField>
+
+<ParamField path="numericOnlyVariation" type="boolean" default="false">
+  When `true`, requires `@variation` values to be non-negative integers.
+</ParamField>
+
+## Examples
+
+<Tabs>
+  <Tab title="Incorrect">
+```javascript
+/**
+ * @version
+ */
+function quux(foo) {}
+// Message: Missing JSDoc @version value.
+
+/**
+ * @version 3.1
+ */
+function quux(foo) {}
+// Message: Invalid JSDoc @version: "3.1".
+
+/**
+ * @since 3.1
+ */
+function quux(foo) {}
+// Message: Invalid JSDoc @since: "3.1".
+
+/**
+ * @license
+ */
+function quux(foo) {}
+// Message: Missing JSDoc @license value.
+
+/**
+ * @license FOO
+ */
+function quux(foo) {}
+// Message: Invalid JSDoc @license: "FOO"; expected SPDX expression:
+//          https://spdx.org/licenses/.
+
+/**
+ * @license (MIT OR GPL-2.5)
+ */
+function quux(foo) {}
+// Message: Invalid JSDoc @license: "(MIT OR GPL-2.5)"; expected SPDX expression.
+// Note: valid SPDX expression would be "(MIT OR GPL-2.0)"
+
+/**
+ * @author
+ */
+function quux(foo) {}
+// Message: Missing JSDoc @author value.
+
+/**
+ * @kind -3
+ */
+function quux(foo) {}
+// Message: Invalid JSDoc @kind: "-3"; must be one of: class, constant,
+//          event, external, file, function, member, mixin, module,
+//          namespace, typedef.
+```
+
+With options:
+
+```javascript
+/**
+ * @author Brett Zamir
+ */
+function quux(foo) {}
+// "jsdoc/check-values": ["warn", { "allowedAuthors": ["Gajus Kuizinas", "golopot"] }]
+// Message: Invalid JSDoc @author: "Brett Zamir"; expected one of
+//          Gajus Kuizinas, golopot.
+
+/**
+ * @license FOO
+ */
+function quux(foo) {}
+// "jsdoc/check-values": ["warn", { "allowedLicenses": ["BAR", "BAX"] }]
+// Message: Invalid JSDoc @license: "FOO"; expected one of BAR, BAX.
+
+/**
+ * @variation -3
+ */
+function quux(foo) {}
+// "jsdoc/check-values": ["warn", { "numericOnlyVariation": true }]
+// Message: Invalid JSDoc @variation: "-3".
+```
+  </Tab>
+  <Tab title="Correct">
+```javascript
+/**
+ * @version 3.4.1
+ */
+function quux(foo) {}
+
+/**
+ * @since 3.4.1
+ */
+function quux(foo) {}
+
+/**
+ * @license MIT
+ */
+function quux(foo) {}
+
+/**
+ * @license MIT
+ * Some extra text...
+ */
+function quux(foo) {}
+
+/**
+ * @license (MIT OR GPL-2.0)
+ */
+function quux(foo) {}
+
+/**
+ * @author Gajus Kuizinas
+ */
+function quux(foo) {}
+
+/**
+ * @kind function
+ */
+function quux(foo) {}
+
+/**
+ * @variation 3
+ */
+function quux(foo) {}
+// "jsdoc/check-values": ["warn", { "numericOnlyVariation": true }]
+```
+
+With custom license options:
+
+```javascript
+/**
+ * @license FOO
+ */
+function quux(foo) {}
+// "jsdoc/check-values": ["warn", { "allowedLicenses": ["FOO", "BAR"] }]
+
+/**
+ * @license FOO
+ */
+function quux(foo) {}
+// "jsdoc/check-values": ["warn", { "allowedLicenses": true }]
+// Valid: any license is allowed
+```
+  </Tab>
+</Tabs>
+
+### TypeScript `@import` validation
+
+In TypeScript mode, `@import` tags are also checked for valid ES import syntax:
+
+```javascript
+/**
+ * @import { Linter } from "eslint"
+ */
+
+/**
+ * @import LinterDefault from "eslint"
+ */
+
+/**
+ * @import * as Linters from "eslint"
+ */
+```
+
+## Configuration
+
+```javascript
+// eslint.config.js
+import jsdoc from 'eslint-plugin-jsdoc';
+
+export default [
+  {
+    plugins: { jsdoc },
+    rules: {
+      'jsdoc/check-values': ['warn', {
+        allowedAuthors: ['Alice', 'Bob'],
+        allowedLicenses: ['MIT', 'Apache-2.0'],
+        numericOnlyVariation: false,
+      }],
+    },
+  },
+];
+```
+
+<Note>
+This rule is included in `jsdoc.configs['flat/recommended']` and reports at the `warn` level by default.
+</Note>

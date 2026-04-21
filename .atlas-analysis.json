@@ -1,28 +1,11 @@
 {
-  "$schema": "https://mintlify.com/docs.json",
-  "name": "eslint-plugin-jsdoc",
+  "projectType": "sdk-library",
+  "projectName": "eslint-plugin-jsdoc",
+  "projectDescription": "A comprehensive set of JSDoc-specific linting rules for ESLint, supporting JavaScript and TypeScript projects.",
   "theme": "luma",
-  "colors": {
-    "primary": "#848c8e",
-    "light": "#11161e",
-    "dark": "#cfd0d2"
-  },
-  "favicon": "https://media.brand.dev/2b01fe20-c04b-4a1d-a2f9-1d2789c50a7a.jpg",
-  "logo": {
-    "light": "https://media.brand.dev/5ffd6ce4-2434-4b4b-920a-f8cacac8b48b.svg",
-    "dark": "https://media.brand.dev/5ffd6ce4-2434-4b4b-920a-f8cacac8b48b.svg"
-  },
-  "navbar": {
-    "primary": {
-      "type": "github",
-      "href": "https://github.com/gajus/eslint-plugin-jsdoc"
-    }
-  },
-  "footer": {
-    "socials": {
-      "github": "https://github.com/gajus/eslint-plugin-jsdoc"
-    }
-  },
+  "primaryColor": "#848c8e",
+  "lightColor": "#11161e",
+  "darkColor": "#cfd0d2",
   "navigation": {
     "tabs": [
       {
@@ -116,5 +99,27 @@
         ]
       }
     ]
-  }
+  },
+  "keyFeatures": [
+    "66+ JSDoc linting rules for ESLint",
+    "Recommended preset configs for JavaScript, TypeScript, and TSDoc",
+    "Flat config (ESLint v9+) and classic eslintrc support",
+    "Auto-fixable rules for consistent formatting",
+    "TypeScript-aware rules and type validation",
+    "Processor for linting @example code blocks",
+    "Granular rule subsets: contents, logical, requirements, stylistic",
+    "Structured tag configuration and alias preferences"
+  ],
+  "publicApiSurface": [
+    "jsdoc (default export) — ESLint plugin object with rules and configs",
+    "jsdoc() — Flat config factory function (procedural API)",
+    "jsdoc.configs['flat/recommended']",
+    "jsdoc.configs['flat/recommended-typescript']",
+    "jsdoc.configs['flat/recommended-typescript-flavor']",
+    "jsdoc.configs['flat/recommended-tsdoc']",
+    "jsdoc.configs['flat/recommended-mixed']",
+    "getJsdocProcessorPlugin — processor for @example linting",
+    "iterateJsdoc — utility for building custom JSDoc rules",
+    "settings.jsdoc.* — shared plugin settings (mode, tagNamePreference, structuredTags, etc.)"
+  ]
 }

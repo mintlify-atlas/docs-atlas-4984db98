@@ -1,0 +1,135 @@
+---
+title: "multiline-blocks: control JSDoc single vs multi-line style"
+description: "Enforces whether JSDoc blocks are written as single-line or multi-line comments, and controls text placement at the opening and closing of multi-line blocks."
+---
+
+The `multiline-blocks` rule controls how JSDoc blocks are formatted—whether they must be single-line or multi-line, and whether text is permitted on the same line as the opening `/**` or closing `*/` delimiters. Consistent block style reduces visual noise and makes JSDoc comments easier to scan at a glance.
+
+## Rule details
+
+| | |
+|---|---|
+| Recommended | yes |
+| Fixable | yes (🔧) |
+| Rule name | `"jsdoc/multiline-blocks"` |
+
+The fixer optionally converts single-line blocks to multi-line and vice versa.
+
+## Options
+
+<ParamField body="noZeroLineText" type="boolean" default="true">
+  For multi-line blocks, reports any non-whitespace text immediately after `/**` on the opening line. Text after a newline on that line is not reported.
+</ParamField>
+
+<ParamField body="noFinalLineText" type="boolean" default="true">
+  For multi-line blocks, reports any non-whitespace text preceding `*/` on the closing line. Text before a newline is not reported.
+</ParamField>
+
+<ParamField body="noSingleLineBlocks" type="boolean" default="false">
+  When `true`, reports any single-line JSDoc block, except those whose tag is listed in `singleLineTags`.
+</ParamField>
+
+<ParamField body="singleLineTags" type="string[]" default='["lends", "type"]'>
+  Tags that are still allowed as single-line blocks when `noSingleLineBlocks` is `true`. Set to `["*"]` to allow any tagged single-line block; set to `[]` to report all single-line blocks regardless of tag.
+</ParamField>
+
+<ParamField body="noMultilineBlocks" type="boolean" default="false">
+  Requires all JSDoc blocks to be single-line only, unless overridden by `minimumLengthForMultiline`, `multilineTags`, or `allowMultipleTags`.
+</ParamField>
+
+<ParamField body="allowMultipleTags" type="boolean" default="true">
+  When `noMultilineBlocks` is `true`, skips reporting blocks that contain multiple tags (or a description alongside a tag), since those cannot be collapsed to a single line.
+</ParamField>
+
+<ParamField body="multilineTags" type="string[]" default='["*"]'>
+  When `noMultilineBlocks` is `true`, lists specific tags whose presence allows a multi-line block regardless of length. Use `"*"` to permit multi-line when any tag is present. Set to `[]` to disallow multi-line for all tags.
+</ParamField>
+
+<ParamField body="minimumLengthForMultiline" type="number">
+  When `noMultilineBlocks` is `true`, permits multi-line blocks whose content meets or exceeds this character count. Has no effect when not set.
+</ParamField>
+
+<ParamField body="requireSingleLineUnderCount" type="number | null" default="null">
+  When set, reports multi-line blocks whose single-line content is under this character threshold, enforcing single-line JSDoc for short comments. Blocks with multi-line descriptions, multiple tags, a description plus a tag, or tags with multi-line types/descriptions are not reported.
+</ParamField>
+
+## Examples
+
+<Tabs>
+  <Tab title="Incorrect">
+    ```js
+    // noZeroLineText: true (default) — text on the opening line
+    /** Reported up here
+     * because the rest is multiline
+     */
+
+    // noFinalLineText: true (default) — text on the closing line
+    /**
+     * @someTag {aType} with Description */
+
+    // noSingleLineBlocks: true — single-line block not in singleLineTags
+    /** @tag */
+
+    // noMultilineBlocks: true — multi-line block should be single-line
+    /**
+     * Desc.
+     */
+    ```
+  </Tab>
+  <Tab title="Correct">
+    ```js
+    // noZeroLineText: true (default) — text starts on its own line
+    /**
+     * Not reported
+     */
+
+    // noFinalLineText: true (default) — closing */ on its own line
+    /**
+     * @someTag with Description
+     */
+
+    // noSingleLineBlocks: true — @lends is in the default singleLineTags
+    /** @lends */
+
+    // noMultilineBlocks: true — short content fits on one line
+    /** Test */
+    ```
+  </Tab>
+</Tabs>
+
+### Using `requireSingleLineUnderCount`
+
+```js
+// ❌ Too short to justify a multi-line block (under 80 chars)
+/**
+ * Description too short
+ */
+
+// ✅ Long enough to stay multi-line
+/**
+ * This description here is very much long enough, I'd say, wouldn't you?
+ */
+```
+
+## Configuration
+
+```js
+// eslint.config.js
+import jsdoc from "eslint-plugin-jsdoc";
+
+export default [
+  {
+    plugins: { jsdoc },
+    rules: {
+      "jsdoc/multiline-blocks": ["warn", {
+        noZeroLineText: true,
+        noFinalLineText: true,
+        noSingleLineBlocks: false,
+        singleLineTags: ["lends", "type"],
+        noMultilineBlocks: false,
+        allowMultipleTags: true,
+      }],
+    },
+  },
+];
+```

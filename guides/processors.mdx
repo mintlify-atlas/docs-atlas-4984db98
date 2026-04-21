@@ -1,0 +1,205 @@
+---
+title: "Linting @example code blocks with processors"
+description: "Use the getJsdocProcessorPlugin processor to lint JavaScript code inside @example JSDoc tags with ESLint rules, replacing the deprecated check-examples rule."
+---
+
+Normally ESLint cannot see JavaScript inside JSDoc tag text. The `getJsdocProcessorPlugin` processor extracts code from `@example` tags (and optionally from `@default`, `@param` default values, and `@property` default values) and feeds it back to ESLint as virtual files so your normal rules apply.
+
+<Note>
+The `check-examples` rule is deprecated and does not work with ESLint 8 or later. Use the `getJsdocProcessorPlugin` processor described on this page instead.
+</Note>
+
+## Basic setup
+
+Install `eslint-plugin-jsdoc` if you have not already, then add the processor to your ESLint flat config:
+
+```js
+import {getJsdocProcessorPlugin} from 'eslint-plugin-jsdoc/getJsdocProcessorPlugin.js';
+
+export default [
+  {
+    files: ['**/*.js'],
+    plugins: {
+      examples: getJsdocProcessorPlugin(),
+    },
+    processor: 'examples/examples',
+  },
+  {
+    // Target the extracted @example code blocks
+    // The default extension mimics eslint-plugin-markdown: *.md/*.js
+    files: ['**/*.md/*.js'],
+    rules: {
+      // Enable or disable rules that apply inside @example blocks
+      'no-console': 'error',
+    },
+  },
+];
+```
+
+The processor returns an ESLint plugin object. Registering it under any key (here `examples`) and then referencing `<key>/examples` as the processor is the required pattern.
+
+### Using the built-in configs
+
+If you do not need custom rule overrides, the built-in configs handle all of the above for you:
+
+```js
+import jsdoc from 'eslint-plugin-jsdoc';
+
+export default [
+  // Lint @example blocks
+  ...jsdoc.configs.examples,
+
+  // Or lint @default, @param and @property default expressions
+  // ...jsdoc.configs['default-expressions'],
+
+  // Or both
+  // ...jsdoc.configs['examples-and-default-expressions'],
+];
+```
+
+These configs also disable rules that are rarely useful in example or default-value contexts — for instance, `no-unused-vars` is turned off because demo snippets often declare a variable without using it.
+
+## Configuration options
+
+Pass an options object to `getJsdocProcessorPlugin` to customize which tags are processed and how:
+
+```js
+getJsdocProcessorPlugin({
+  // Check @example blocks (default: true)
+  checkExamples: true,
+
+  // Also check @default someValue (default: false)
+  checkDefaults: false,
+
+  // Also check @param [name=someDefault] (default: false)
+  checkParams: false,
+
+  // Also check @property [name=someDefault] (default: false)
+  checkProperties: false,
+})
+```
+
+### `checkExamples`
+
+Whether to extract and lint `@example` tag content. Defaults to `true`.
+
+### `checkDefaults`
+
+Whether to extract and lint the value in `@default someValue`. Defaults to `false`.
+
+### `checkParams`
+
+Whether to extract and lint default values in `@param [name=someDefault]`. Defaults to `false`.
+
+### `checkProperties`
+
+Whether to extract and lint default values in `@property [name=someDefault]`. Defaults to `false`.
+
+### `captionRequired`
+
+Whether to require a `<caption>...</caption>` block at the start of each `@example`. Defaults to `false`.
+
+### `paddedIndent`
+
+Number of leading spaces to strip from each line before linting. Defaults to `0`. Only affects whitespace-sensitive rules.
+
+### `matchingFileName`
+
+Override the virtual filename used for `@example` blocks. By default the processor derives a filename from the source file with a `.md/*.js` extension so rules configured for Markdown JS blocks apply. Pass a custom path to change which rules fire.
+
+Similarly, `matchingFileNameDefaults`, `matchingFileNameParams`, and `matchingFileNameProperties` override the virtual filename for their respective tag types. Default extensions are `.jsdoc-defaults`, `.jsdoc-params`, and `.jsdoc-properties`.
+
+### `exampleCodeRegex` and `rejectExampleCodeRegex`
+
+A string or `RegExp` to select (or reject) which parts of an `@example` to lint. Useful when examples contain mixed content such as Markdown prose and fenced code blocks.
+
+### `allowedLanguagesToProcess`
+
+An array of fenced-block language names to process. Any fenced block whose language is not in the list is skipped. Defaults to `['js', 'ts', 'javascript', 'typescript']`. Set to `false` to process all languages.
+
+### `sourceType`
+
+Whether to parse extracted code as `"module"` or `"script"`. Defaults to `"module"`.
+
+### `parser`
+
+An alternative parser with a `parseForESLint` method (e.g. `typescript-eslint`'s parser). Defaults to ESLint's built-in Espree parser.
+
+## Example: linting a JSDoc `@example` block
+
+Given this source file:
+
+```js
+/**
+ * Adds two numbers.
+ * @param {number} a
+ * @param {number} b
+ * @returns {number}
+ * @example
+ * const result = add(1, 2)
+ * console.log(result) // 3
+ */
+export function add(a, b) {
+  return a + b;
+}
+```
+
+With `no-console: 'error'` applied to `**/*.md/*.js`, ESLint will report an error on the `console.log` line inside the `@example` block.
+
+## Processing default expressions
+
+Default expressions are typically single expressions, not full statements, so a slightly different set of rules is useful. The built-in `default-expressions` config enables two rules for these blocks:
+
+- `quotes` — set to `"double"`, matching common JSDoc style
+- `semi` — set to `"never"`, since a trailing semicolon is not meaningful in a default-value context
+
+To lint all three default-expression tag types together with `@example` blocks, use `examples-and-default-expressions`:
+
+```js
+import jsdoc from 'eslint-plugin-jsdoc';
+
+export default [
+  ...jsdoc.configs['examples-and-default-expressions'],
+];
+```
+
+## Use with TypeScript
+
+To process `@example` blocks in TypeScript files using `typescript-eslint`'s parser:
+
+```js
+import {getJsdocProcessorPlugin} from 'eslint-plugin-jsdoc/getJsdocProcessorPlugin.js';
+import ts, {parser as typescriptEslintParser} from 'typescript-eslint';
+
+export default [
+  {
+    files: ['**/*.ts'],
+    languageOptions: {
+      parser: typescriptEslintParser,
+    },
+    name: 'jsdoc/examples/processor',
+    plugins: {
+      examples: getJsdocProcessorPlugin({
+        // Parse the source TS files
+        parser: typescriptEslintParser,
+        // Emit virtual TS files instead of the default *.md/*.js
+        matchingFileName: 'dummy.md/*.ts',
+      }),
+    },
+    processor: 'examples/examples',
+  },
+  ...ts.configs.recommended,
+  {
+    files: ['**/*.md/*.ts'],
+    name: 'jsdoc/examples/rules',
+    languageOptions: {
+      parser: typescriptEslintParser,
+    },
+    rules: {
+      'no-extra-semi': 'error',
+      // Type-checked rules must be disabled for now (see #1377)
+      ...ts.configs.disableTypeChecked.rules,
+    },
+  },
+];
+```

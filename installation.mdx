@@ -1,0 +1,69 @@
+---
+title: "Install eslint-plugin-jsdoc"
+description: "Install eslint-plugin-jsdoc with npm, yarn, or pnpm alongside ESLint. Covers prerequisites, local vs global install, and links to configuration next steps."
+---
+
+Add eslint-plugin-jsdoc to an existing JavaScript or TypeScript project that already uses ESLint, or follow the steps below to set up ESLint first.
+
+## Prerequisites
+
+Before installing, confirm your environment meets these requirements:
+
+- **Node.js**: `^20.19.0`, `^22.13.0`, or `>=24`
+- **ESLint**: `^7.0.0`, `^8.0.0`, `^9.0.0`, or `^10.0.0`
+
+## Steps
+
+<Steps>
+  <Step title="Install ESLint">
+    If you don't have ESLint in your project yet, install it as a dev dependency:
+
+    <CodeGroup>
+
+    ```bash npm
+    npm install --save-dev eslint
+    ```
+
+    ```bash yarn
+    yarn add --dev eslint
+    ```
+
+    ```bash pnpm
+    pnpm add --save-dev eslint
+    ```
+
+    </CodeGroup>
+  </Step>
+
+  <Step title="Install eslint-plugin-jsdoc">
+    Add the plugin to your project:
+
+    <CodeGroup>
+
+    ```bash npm
+    npm install --save-dev eslint-plugin-jsdoc
+    ```
+
+    ```bash yarn
+    yarn add --dev eslint-plugin-jsdoc
+    ```
+
+    ```bash pnpm
+    pnpm add --save-dev eslint-plugin-jsdoc
+    ```
+
+    </CodeGroup>
+  </Step>
+
+  <Step title="Configure the plugin">
+    Add eslint-plugin-jsdoc to your ESLint config. See the [quickstart](/quickstart) for a minimal working configuration, or go to [configuration](/configuration/flat-config) for the full reference.
+  </Step>
+</Steps>
+
+<Note>
+  If you installed ESLint globally (`npm install -g eslint`), you must also install eslint-plugin-jsdoc globally (`npm install -g eslint-plugin-jsdoc`). For most projects, a local installation is recommended.
+</Note>
+
+## Next steps
+
+Once the plugin is installed, follow the [quickstart](/quickstart) to add a preset config and start linting JSDoc comments.

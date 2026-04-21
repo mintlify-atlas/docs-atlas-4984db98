@@ -1,0 +1,379 @@
+---
+title: "Plugin-wide settings for eslint-plugin-jsdoc"
+description: "Configure shared eslint-plugin-jsdoc settings: mode, tag name aliases, ignorePrivate, ignoreInternal, structuredTags, and type checking behavior."
+---
+
+Plugin-wide settings are placed in the `settings.jsdoc` object of your ESLint config. They apply to all `eslint-plugin-jsdoc` rules and allow you to customize parsing behavior, tag name preferences, and how specific rules validate types and tags.
+
+In flat config:
+
+```js
+export default [
+  {
+    settings: {
+      jsdoc: {
+        mode: 'typescript',
+        tagNamePreference: { returns: 'return' },
+      },
+    },
+  },
+];
+```
+
+In eslintrc:
+
+```json
+{
+  "settings": {
+    "jsdoc": {
+      "mode": "typescript",
+      "tagNamePreference": { "returns": "return" }
+    }
+  }
+}
+```
+
+<Note>
+When using the `jsdoc()` factory function in flat config, pass settings directly (without a `jsdoc` wrapper key). See [Flat config setup](/configuration/flat-config) for details.
+</Note>
+
+---
+
+## Suppressing rules on comment blocks
+
+<ParamField path="ignorePrivate" type="boolean" default="false">
+  When `true`, all rules are disabled for any JSDoc comment block that contains a `@private` tag (or `@access private`). Has no effect on the `check-access` or `empty-tags` rules.
+</ParamField>
+
+<ParamField path="ignoreInternal" type="boolean" default="false">
+  When `true`, all rules are disabled for any JSDoc comment block that contains a `@internal` tag. Has no effect on the `empty-tags` rule.
+</ParamField>
+
+---
+
+## Comment block proximity
+
+<ParamField path="minLines" type="number" default="0">
+  Minimum number of line breaks allowed between a JSDoc comment block and the code it documents. Used with `require-jsdoc` to validate proximity.
+</ParamField>
+
+<ParamField path="maxLines" type="number" default="1">
+  Maximum number of line breaks allowed between a JSDoc comment block and the code it documents. Also used by the `require-jsdoc` fixer to determine how many line breaks to add when inserting a missing block.
+</ParamField>
+
+---
+
+## Comment finding
+
+<ParamField path="skipInvokedExpressionsForCommentFinding" type="boolean" default="false">
+  When `true`, allows JSDoc blocks to be found across call expressions and `new` expressions. Useful when functions are passed as arguments and their JSDoc comment precedes the outer call:
+
+  ```js
+  /**
+   * @param a
+   * @param b
+   * @param c
+   */
+  const quux = foo(function (a, b, c) {});
+  ```
+</ParamField>
+
+---
+
+## Mode
+
+<ParamField path="mode" type="string" default="typescript">
+  Controls how JSDoc is parsed and which tags and type syntax are considered valid. Accepted values:
+
+  - `"typescript"` (default) — Parses types using TypeScript-style JSDoc. Recommended for most projects.
+  - `"jsdoc"` — Standard JSDoc mode.
+  - `"closure"` — Google Closure Compiler mode. Allows types on additional tags and enforces Closure-specific syntax.
+  - `"permissive"` — Attempts to accommodate any style. Not recommended.
+
+  The `mode` setting affects:
+  - `check-tag-names`: determines which tags and aliases are valid
+  - `no-undefined-types`: only checks `@template` for types in `"closure"` and `"typescript"` modes
+  - `check-syntax`: determines which syntax aspects are enforced
+  - `valid-types`: in non-Closure mode, reports `@extends`, `@package`, and access tags with bracketed types, and missing names on `@typedef`
+  - Type-checking rules: determines which tags are checked and how types are parsed
+</ParamField>
+
+---
+
+## Tag name preferences
+
+<ParamField path="tagNamePreference" type="object">
+  A map of primary tag names to preferred alias names. Affects `check-tag-names` and all `@param`/`@returns` related rules.
+
+  The simplest form maps a primary tag to its preferred alias:
+
+  ```json
+  {
+    "settings": {
+      "jsdoc": {
+        "tagNamePreference": {
+          "param": "arg",
+          "returns": "return"
+        }
+      }
+    }
+  }
+  ```
+
+  You can also supply an object with `message` and `replacement` to emit a custom message when the non-preferred tag is encountered:
+
+  ```json
+  {
+    "settings": {
+      "jsdoc": {
+        "tagNamePreference": {
+          "augments": {
+            "message": "@extends is to be used over @augments as it is more evocative of classes than @augments",
+            "replacement": "extends"
+          }
+        }
+      }
+    }
+  }
+  ```
+
+  To outright forbid a tag (e.g., prevent `@todo`), set its value to `false`:
+
+  ```json
+  {
+    "settings": {
+      "jsdoc": {
+        "tagNamePreference": {
+          "todo": false
+        }
+      }
+    }
+  }
+  ```
+
+  To forbid a tag with a custom message but no replacement, use an object with only `message`:
+
+  ```json
+  {
+    "settings": {
+      "jsdoc": {
+        "tagNamePreference": {
+          "todo": {
+            "message": "We expect immediate perfection, so don't leave to-dos in your code."
+          }
+        }
+      }
+    }
+  }
+  ```
+
+  <Note>
+  ESLint does not allow settings keys that conflict with `Object.prototype` (e.g., `'constructor'`). Use `'tag constructor'` as the key to work around this.
+  </Note>
+
+  Tags listed in `tagNamePreference` are assumed to be valid by `check-tag-names`, which allows you to permit an alias alongside its primary form by mapping it to itself.
+</ParamField>
+
+### Default preferred aliases
+
+The plugin enforces these tag name defaults out of the box:
+
+| Preferred tag | Aliases |
+|---------------|---------|
+| `@abstract` | `@virtual` |
+| `@augments` | `@extends` |
+| `@class` | `@constructor` |
+| `@constant` | `@const` |
+| `@default` | `@defaultvalue` |
+| `@description` | `@desc` |
+| `@external` | `@host` |
+| `@file` | `@fileoverview`, `@overview` |
+| `@fires` | `@emits` |
+| `@function` | `@func`, `@method` |
+| `@member` | `@var` |
+| `@param` | `@arg`, `@argument` |
+| `@property` | `@prop` |
+| `@returns` | `@return` |
+| `@throws` | `@exception` |
+| `@yields` | `@yield` |
+
+These defaults are used by: `check-param-names`, `check-tag-names`, `require-hyphen-before-param-description`, `require-description`, `require-param`, `require-param-description`, `require-param-name`, `require-param-type`, `require-returns`, `require-returns-check`, `require-returns-description`, and `require-returns-type`.
+
+---
+
+## Override/augments/implements behavior
+
+The following settings control whether certain inheritance-related tags suppress the requirement to document params, descriptions, examples, returns, throws, and yields:
+
+<ParamField path="overrideReplacesDocs" type="boolean" default="true">
+  When `true`, a `@override` tag on a JSDoc comment block causes the "require" rules (`require-param`, `require-description`, etc.) to skip that block.
+</ParamField>
+
+<ParamField path="ignoreReplacesDocs" type="boolean" default="true">
+  When `true`, a `@ignore` tag causes the "require" rules to skip that block.
+</ParamField>
+
+<ParamField path="augmentsExtendsReplacesDocs" type="boolean" default="false">
+  When `true`, a `@augments` or `@extends` tag causes the "require" rules to skip that block (and its parent class's block).
+</ParamField>
+
+<ParamField path="implementsReplacesDocs" type="boolean" default="false">
+  When `true`, a `@implements` tag causes the "require" rules to skip that block.
+</ParamField>
+
+Example:
+
+```json
+{
+  "settings": {
+    "jsdoc": {
+      "ignoreReplacesDocs": true,
+      "overrideReplacesDocs": true,
+      "augmentsExtendsReplacesDocs": true,
+      "implementsReplacesDocs": true
+    }
+  }
+}
+```
+
+---
+
+## Type preferences (`check-types` and `no-undefined-types`)
+
+<ParamField path="preferredTypes" type="object">
+  A map used by `check-types` and `no-undefined-types` to indicate preferred or forbidden types. Keys are the types to be replaced or forbidden; values define what to prefer instead.
+
+  Key formats:
+  - `"*"` — matches the "ANY" type
+  - `"[]"` — matches the parent array type in `string[]`, `number[]`, etc.
+  - `".<>"` or `"."` — matches `Array.<value>` or `Object.<key, value>` format
+  - `"<>"` — matches `Array<value>` or `Object<key, value>` format
+  - A plain type name such as `"MyType"`
+  - A type name with a pseudo-type suffix such as `"Array."` or `"SpecialObject<>"`
+
+  Value formats:
+  - A string — the preferred replacement type (fixable by `--fix`)
+  - `false` — forbids the type entirely
+  - An object with:
+    - `message` (string) — custom error message; `{{tagName}}` and `{{tagValue}}` are interpolated
+    - `replacement` (string | `false`, optional) — preferred replacement, or `false` to forbid
+    - `skipRootChecking` (boolean, optional) — allows this type as a parent/root type
+    - `unifyParentAndChildTypeChecks` (boolean, optional) — treats the key as matching both child and parent forms (e.g., `Array` also matches `Array<string>` and `Array.<string>`)
+
+  Example — prefer `object` over `Object` and vice versa (allow both):
+
+  ```json
+  {
+    "settings": {
+      "jsdoc": {
+        "preferredTypes": {
+          "object": "Object",
+          "Object": "object"
+        }
+      }
+    }
+  }
+  ```
+
+  Example — forbid `Function` type with a message:
+
+  ```json
+  {
+    "settings": {
+      "jsdoc": {
+        "preferredTypes": {
+          "Function": {
+            "message": "Use a specific function signature type instead of `Function`.",
+            "replacement": false
+          }
+        }
+      }
+    }
+  }
+  ```
+
+  Types listed as values in `preferredTypes` are assumed to be defined, preventing `no-undefined-types` from reporting them.
+</ParamField>
+
+---
+
+## `structuredTags`
+
+<ParamField path="structuredTags" type="object">
+  Defines how specific tags are validated for types and names/namepaths. Keys are tag names; values are configuration objects with the following optional properties:
+
+  **`name`** (string) — controls how the name position is validated:
+  - `"text"` (default) — allows free-form text in the name position
+  - `"name-defining"` — the tag defines a plain name (not a namepath)
+  - `"namepath-defining"` — the tag defines a namepath (also prevents `no-undefined-types` from reporting references to it)
+  - `"namepath-referencing"` — requires the name position to be a valid namepath
+  - `"namepath-or-url-referencing"` — for inline tags that may point to a namepath or URL
+  - `false` — disallows any text in the name position
+
+  **`type`** (boolean | string[]):
+  - `true` (default) — allows valid types within brackets
+  - `false` — disallows any brackets or bracketed type
+  - Array of strings — restricts to only the listed types
+
+  **`required`** (array) — specifies which parts are required (defaults to `[]`):
+  - `"name"` — a name position value is required
+  - `"type"` — a bracketed type is required
+  - `"typeOrNameRequired"` — either a type or a name must be present; an empty tag is disallowed
+
+  Example — require `@see` to have a namepath and make it required:
+
+  ```json
+  {
+    "settings": {
+      "jsdoc": {
+        "structuredTags": {
+          "see": {
+            "name": "namepath-referencing",
+            "required": ["name"]
+          }
+        }
+      }
+    }
+  }
+  ```
+
+  Example — require `@throws` to always have a type:
+
+  ```json
+  {
+    "settings": {
+      "jsdoc": {
+        "structuredTags": {
+          "throws": {
+            "required": ["type"]
+          }
+        }
+      }
+    }
+  }
+  ```
+</ParamField>
+
+---
+
+## `contexts`
+
+<ParamField path="contexts" type="array">
+  Sets a default value for the `contexts` option of any rule that supports it. Replaces the default contexts for those rules, including function-related defaults.
+
+  ```json
+  {
+    "settings": {
+      "jsdoc": {
+        "contexts": ["FunctionDeclaration", "ArrowFunctionExpression"]
+      }
+    }
+  }
+  ```
+
+  <Warning>
+  Setting `contexts` here will replace all default contexts, including those for function-checking rules. For example, excluding `FunctionDeclaration` will prevent `require-param` from checking function declarations.
+  </Warning>
+
+  See the "AST and Selectors" section of the plugin documentation for details on the context format.
+</ParamField>

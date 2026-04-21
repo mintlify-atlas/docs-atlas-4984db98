@@ -1,0 +1,147 @@
+---
+title: "require-returns: enforce @returns tags on functions"
+description: "Require that functions with non-void return statements have a @returns JSDoc tag. Supports async functions, Promises, getter methods, and custom contexts."
+---
+
+The `require-returns` rule checks that functions containing a meaningful `return` statement (one that returns a non-`undefined` value) have a corresponding `@returns` (or `@return`) tag in their JSDoc block. It will also report if a function has multiple `@returns` tags.
+
+## Rule details
+
+| | |
+|---|---|
+| Recommended | ✓ |
+| Fixable | 🔧 (adds a blank `@returns`, disabled by default) |
+| Rule name | `"jsdoc/require-returns"` |
+| Tag aliases | `@return` |
+
+The rule understands `Promise` resolution: a function that returns `new Promise(resolve => resolve(value))` is treated as returning a value. It also handles `async` functions, where `forceReturnsWithAsync` can require documentation even when no explicit value is returned.
+
+## Options
+
+### `checkGetters`
+
+Whether getter methods should be checked for a `@returns` tag. Defaults to `true`.
+
+### `checkConstructors`
+
+Whether constructors should be checked for a `@returns` tag. Defaults to `false`.
+
+### `forceRequireReturn`
+
+When `true`, always requires a `@returns` tag regardless of whether the function actually returns a value. Useful for making void/undefined returns explicit. Defaults to `false`.
+
+### `forceReturnsWithAsync`
+
+When `true`, requires a `@returns` tag on all `async` functions even if they do not explicitly return a value (since `async` functions always return a `Promise`). Defaults to `false`.
+
+### `enableFixer`
+
+Whether to enable the fixer that inserts a blank `@returns` tag. Defaults to `false`.
+
+### `exemptedBy`
+
+Array of tag names whose presence exempts the function from this rule. Defaults to `["inheritdoc"]`.
+
+### `contexts`
+
+An array of AST context strings (or objects with `context`, `comment`, and optional `forceRequireReturn` properties) where the rule should apply. Overrides the default contexts (`ArrowFunctionExpression`, `FunctionDeclaration`, `FunctionExpression`). Set to `"any"` to apply to any JSDoc block, including `@callback` and `@function` blocks not attached to a function.
+
+### `publicOnly`
+
+Restricts reporting to exported functions only. Can be `true` (use defaults) or an object with:
+
+| Key | Default | Description |
+|---|---|---|
+| `esm` | `true` | Check ESM exports |
+| `cjs` | `true` | Check CommonJS exports |
+| `window` | `false` | Check window-global assignments |
+| `ancestorsOnly` | `false` | Only check direct ancestor nodes for export status |
+
+## Examples
+
+<Tabs>
+  <Tab title="Incorrect">
+    ```javascript
+    /**
+     *
+     */
+    function getUserById(id) {
+      return db.find(id);
+    }
+    // Message: Missing JSDoc @returns declaration.
+
+    /**
+     * @param {number} ms
+     */
+    async function sleep(ms) {
+      return new Promise((res) => setTimeout(res, ms));
+    }
+    // Message: Missing JSDoc @returns declaration.
+
+    /**
+     *
+     */
+    async function fetchData() {}
+    // "jsdoc/require-returns": ["error", { "forceReturnsWithAsync": true }]
+    // Message: Missing JSDoc @returns declaration.
+    ```
+  </Tab>
+  <Tab title="Correct">
+    ```javascript
+    /**
+     * Retrieves a user by ID.
+     * @param {string} id - The user ID.
+     * @returns {User} The found user object.
+     */
+    function getUserById(id) {
+      return db.find(id);
+    }
+
+    /**
+     * Pauses execution for a given number of milliseconds.
+     * @param {number} ms - Duration in milliseconds.
+     * @returns {Promise<void>} Resolves after the delay.
+     */
+    async function sleep(ms) {
+      return new Promise((res) => setTimeout(res, ms));
+    }
+
+    /**
+     * @returns {void}
+     */
+    function doSomething() {
+      sideEffect();
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Configuration example
+
+```javascript
+// eslint.config.js
+import jsdoc from "eslint-plugin-jsdoc";
+
+export default [
+  {
+    plugins: { jsdoc },
+    rules: {
+      "jsdoc/require-returns": [
+        "error",
+        {
+          checkGetters: true,
+          checkConstructors: false,
+          forceRequireReturn: false,
+          forceReturnsWithAsync: true,
+          enableFixer: false,
+          exemptedBy: ["inheritdoc", "type"],
+        },
+      ],
+    },
+  },
+];
+```
+
+<Note>
+  By default, `async` functions without an explicit meaningful return are not flagged, since they implicitly return a `Promise<void>`. Set `forceReturnsWithAsync: true` if you want all async functions to declare their return type.
+</Note>

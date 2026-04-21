@@ -1,0 +1,190 @@
+---
+title: "tag-lines: enforce blank lines between JSDoc tags"
+description: "Enforces consistent blank line usage between JSDoc tags, before the first tag, and after the last tag, with per-tag overrides and block description line limits."
+---
+
+The `tag-lines` rule controls blank line spacing between JSDoc tags, providing options to require, forbid, or freely allow lines between tags. It also lets you control spacing before the first tag and after the last tag, making it straightforward to produce consistently formatted JSDoc blocks across a codebase.
+
+<Note>
+  The `"always"` and `"never"` main options conflict with the line-break options of the `sort-tags` rule. If you use both rules, set `tag-lines` to `"any"` and use `startLines`/`endLines` for boundary control instead.
+</Note>
+
+## Rule details
+
+| | |
+|---|---|
+| Recommended | yes |
+| Fixable | yes (🔧) |
+| Rule name | `"jsdoc/tag-lines"` |
+
+The fixer adds or removes blank lines between tags as required.
+
+## Options
+
+The first option is a string:
+
+- `"never"` (default) — no blank lines between tags
+- `"always"` — blank lines required between tags
+- `"any"` — no enforcement between tags; useful when using `startLines`, `endLines`, or `maxBlockLines`, or when paired with the `sort-tags` rule
+
+The second option is an object:
+
+<ParamField body="count" type="number" default="1">
+  Number of blank lines required between tags when using `"always"`. For example, `count: 2` requires two blank lines between each tag.
+</ParamField>
+
+<ParamField body="applyToEndTag" type="boolean" default="true">
+  When `false` and the main option is `"always"`, the blank line requirement is not applied after the final tag.
+</ParamField>
+
+<ParamField body="startLines" type="number | null" default="0">
+  Enforces a specific number of blank lines between the block description and the first tag. Set to `null` to disable. Has no effect when the block contains only whitespace before the first tag.
+</ParamField>
+
+<ParamField body="endLines" type="number | null" default="0">
+  Enforces a specific number of blank lines after the final tag. Set to `null` to disable.
+</ParamField>
+
+<ParamField body="maxBlockLines" type="number | null" default="null">
+  When set, enforces a maximum number of consecutive blank lines anywhere within the block description. Must be greater than or equal to `startLines` when both are set.
+</ParamField>
+
+<ParamField body="startLinesWithNoTags" type="number">
+  When set, enforces a blank line count after the block description when the block has no tags. Defaults to `undefined` (not enforced).
+</ParamField>
+
+<ParamField body="tags" type="object" default="{}">
+  Per-tag overrides. Keys are tag names; values are objects with:
+  - `lines`: `"always"`, `"never"`, or `"any"` — overrides the main option for this tag
+  - `count`: overrides the main `count` for this tag when `lines` is `"always"`
+</ParamField>
+
+## Examples
+
+<Tabs>
+  <Tab title="Incorrect">
+    ```js
+    // "always" — missing blank lines between tags
+    /**
+     * Some description
+     * @param {string} a
+     * @param {number} b
+     */
+
+    // "never" — unexpected blank lines between tags
+    /**
+     * Some description
+     * @param {string} a
+     *
+     * @param {number} b
+     *
+     */
+
+    // "any" with startLines: 1 — wrong number of lines before first tag
+    /**
+     * Some description
+     *
+     *
+     * @param {string} a
+     */
+    ```
+  </Tab>
+  <Tab title="Correct">
+    ```js
+    // "never" (default) — no blank lines between tags
+    /**
+     * Some description
+     * @param {string} a
+     * @param {number} b
+     */
+
+    // "always" — one blank line between tags
+    /**
+     * Some description
+     * @param {string} a
+     *
+     * @param {number} b
+     *
+     */
+
+    // "any" with startLines: 1 — exactly one line before first tag
+    /**
+     * Some description
+     *
+     * @param {string} a
+     */
+    ```
+  </Tab>
+</Tabs>
+
+### Per-tag overrides with `tags`
+
+```js
+// "never" globally, but always require a line between @param tags
+// ❌ Missing line between @param tags
+/**
+ * Some description
+ * @param {string} a
+ * @param {number} b
+ */
+
+// ✅ One blank line between @param tags
+/**
+ * Some description
+ * @param {string} a
+ *
+ * @param {number} b
+ */
+```
+
+### Controlling `endLines`
+
+```js
+// "any" with endLines: 1 — one trailing blank line after the last tag
+// ✅
+/**
+ * Some description
+ * @param {string} a
+ *
+ */
+
+// ✅ "any" with endLines: 0 — no trailing blank line
+/**
+ * Some description
+ * @param {string} a
+ * @param {string} b
+ *
+ * @returns {SomeType} An extended description.
+ *
+ * This is still part of @returns.
+ */
+```
+
+## Configuration
+
+```js
+// eslint.config.js
+import jsdoc from "eslint-plugin-jsdoc";
+
+export default [
+  {
+    plugins: { jsdoc },
+    rules: {
+      // Require no blank lines between tags (default)
+      "jsdoc/tag-lines": ["warn", "never"],
+
+      // Or: require one blank line between tags, no trailing line
+      "jsdoc/tag-lines": ["warn", "always", {
+        applyToEndTag: false,
+        count: 1,
+      }],
+
+      // Or: use "any" for compatibility with sort-tags, control boundaries
+      "jsdoc/tag-lines": ["warn", "any", {
+        startLines: 1,
+        endLines: 0,
+      }],
+    },
+  },
+];
+```

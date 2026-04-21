@@ -1,0 +1,280 @@
+---
+title: "check-tag-names: validate JSDoc block tag names"
+description: "Reports invalid or unrecognized JSDoc block tag names, enforces tag name preferences, and supports mode-specific tags for TypeScript, Closure, and JSX."
+keywords: ["eslint", "jsdoc", "check-tag-names", "tags", "typescript", "closure"]
+---
+
+The `check-tag-names` rule reports invalid block tag names and enforces tag name preferences. It validates against the full set of JSDoc 3 tags, and can be configured to allow additional tags or restrict normally valid ones.
+
+## Rule details
+
+| | |
+|---|---|
+| Recommended | ✓ |
+| Fixable | 🔧 Yes—removes types from tags that are redundant when using the `typed` option |
+| Rule name | `"jsdoc/check-tag-names"` |
+| Context | Everywhere |
+| Settings | `tagNamePreference`, `mode` |
+
+## Valid tags
+
+The following JSDoc 3 block tags are recognized by default:
+
+`abstract`, `access`, `alias`, `async`, `augments`, `author`, `borrows`, `callback`, `class`, `classdesc`, `constant`, `constructs`, `copyright`, `default`, `deprecated`, `description`, `enum`, `event`, `example`, `exports`, `external`, `file`, `fires`, `function`, `generator`, `global`, `hideconstructor`, `ignore`, `implements`, `inheritdoc`, `inner`, `instance`, `interface`, `kind`, `lends`, `license`, `listens`, `member`, `memberof`, `memberof!`, `mixes`, `mixin`, `module`, `name`, `namespace`, `override`, `package`, `param`, `private`, `property`, `protected`, `public`, `readonly`, `requires`, `returns`, `see`, `since`, `static`, `summary`, `this`, `throws`, `todo`, `tutorial`, `type`, `typedef`, `variation`, `version`, `yields`
+
+The following synonyms are also recognized when set in `tagNamePreference`:
+
+`arg`, `argument`, `const`, `constructor`, `defaultvalue`, `desc`, `emits`, `exception`, `extends`, `fileoverview`, `func`, `host`, `method`, `overview`, `prop`, `return`, `var`, `virtual`, `yield`
+
+## Options
+
+<ParamField path="definedTags" type="string[]" default="[]">
+  An array of additional tag names to allow. Useful for custom or non-standard
+  tags used in your project.
+
+  ```json
+  { "definedTags": ["note", "record"] }
+  ```
+</ParamField>
+
+<ParamField path="enableFixer" type="boolean" default="true">
+  When `false`, disables the auto-removal of types from tags that are redundant
+  when using the `typed` option.
+</ParamField>
+
+<ParamField path="inlineTags" type="string[]">
+  List of tag names to allow as inline tags (used within `{@tagName ...}`
+  syntax). Defaults to:
+  `['link', 'linkcode', 'linkplain', 'tutorial', 'inheritDoc', 'label', 'include', 'includeCode']`
+</ParamField>
+
+<ParamField path="jsxTags" type="boolean" default="false">
+  When `true`, allows the following JSX-related tags:
+  - `@jsx`
+  - `@jsxFrag`
+  - `@jsxImportSource`
+  - `@jsxRuntime`
+
+  See the [Babel documentation](https://babeljs.io/docs/en/babel-plugin-transform-react-jsx) for usage details.
+</ParamField>
+
+<ParamField path="typed" type="boolean" default="false">
+  When `true`, reports tags that are redundant when using a type checker such
+  as TypeScript.
+
+  **Always redundant with a type system:**
+  `augments`, `callback`, `class`, `enum`, `implements`, `private`, `property`,
+  `protected`, `public`, `readonly`, `this`, `type`, `typedef`
+
+  **Redundant outside TypeScript `declare` contexts:**
+  `abstract`, `access`, `class`, `constant`, `constructs`, `default`, `enum`,
+  `export`, `exports`, `function`, `global`, `inherits`, `instance`,
+  `interface`, `member`, `memberof`, `method`, `mixes`, `mixin`, `module`,
+  `name`, `namespace`, `override`, `property`, `requires`, `static`, `this`
+</ParamField>
+
+## Mode-specific tags
+
+When `settings.jsdoc.mode` is set to `typescript`, the `@template` tag is also allowed.
+
+When `settings.jsdoc.mode` is set to `closure`, additional Closure Compiler tags are allowed, including `define`, `dict`, `export`, `externs`, `final`, `implicitCast`, `inheritDoc`, `noalias`, `nocollapse`, `nocompile`, `noinline`, `nosideeffects`, `polymer`, `polymerBehavior`, `preserve`, `record`, `struct`, `suppress`, `unrestricted`, and several undocumented Closure-only annotations.
+
+## Examples
+
+<Tabs>
+  <Tab title="Incorrect">
+```javascript
+/**
+ * @typoo {string}
+ */
+let a;
+// Message: Invalid JSDoc tag name "typoo".
+
+/**
+ * @Param
+ */
+function quux() {}
+// Message: Invalid JSDoc tag name "Param".
+
+/**
+ * @foo
+ */
+function quux() {}
+// Message: Invalid JSDoc tag name "foo".
+
+/**
+ * @arg foo
+ */
+function quux(foo) {}
+// Message: Invalid JSDoc tag (preference). Replace "arg" JSDoc tag with "param".
+
+/**
+ * @todo
+ */
+function quux() {}
+// Settings: { "jsdoc": { "tagNamePreference": { "todo": false } } }
+// Message: Blacklisted tag found (`@todo`)
+```
+
+With `typed: true`:
+
+```javascript
+/** @type {string} */
+let a;
+// Message: '@type' is redundant when using a type system.
+
+/** @typedef {Object} MyObject
+ * @property {string} id
+ */
+// Message: '@typedef' is redundant when using a type system.
+
+/** @abstract */
+let a;
+// Message: '@abstract' is redundant outside of ambient (`declare`/`.d.ts`)
+//          contexts when using a type system.
+```
+
+With `jsxTags: false` (default):
+
+```javascript
+/** @jsxFrag Fragment */
+/** @jsxImportSource preact */
+/** @jsxRuntime automatic */
+// Message: Invalid JSDoc tag name "jsxFrag".
+```
+  </Tab>
+  <Tab title="Correct">
+```javascript
+/**
+ * @param foo
+ */
+function quux(foo) {}
+
+/**
+ * @bar foo
+ */
+function quux(foo) {}
+// "jsdoc/check-tag-names": ["warn", { "definedTags": ["bar"] }]
+
+/**
+ * @returns
+ */
+function quux(foo) {}
+
+/**
+ * @return
+ */
+function quux(foo) {}
+// Settings: { "jsdoc": { "mode": "closure" } }
+```
+
+With `typed: true`:
+
+```javascript
+/** @default 0 */
+let a;
+// Valid: @default is not flagged by `typed`
+
+/** @param param - takes information */
+function takesOne(param) {}
+// Valid: @param is allowed even with `typed`
+
+/** @template name */
+let a;
+// Valid: @template with a name is allowed with `typed`
+
+/** @abstract */
+declare let a;
+// Valid: @abstract in a `declare` context is allowed
+```
+
+With `jsxTags: true`:
+
+```javascript
+/** @jsx h */
+/** @jsxFrag Fragment */
+/** @jsxImportSource preact */
+/** @jsxRuntime automatic */
+// Valid: JSX tags are allowed
+```
+  </Tab>
+</Tabs>
+
+### Allowing and blocking specific tags
+
+You can control which tags are valid using `settings.jsdoc.tagNamePreference`:
+
+```json
+{
+  "settings": {
+    "jsdoc": {
+      "tagNamePreference": {
+        "augments": {
+          "message": "@extends is to be used over @augments.",
+          "replacement": "extends"
+        },
+        "todo": false,
+        "returns": "return"
+      }
+    }
+  }
+}
+```
+
+To allow both a primary tag and an alias simultaneously, set the alias to itself:
+
+```json
+{
+  "settings": {
+    "jsdoc": {
+      "tagNamePreference": {
+        "return": "return"
+      }
+    }
+  }
+}
+```
+
+## Configuration
+
+```javascript
+// eslint.config.js
+import jsdoc from 'eslint-plugin-jsdoc';
+
+export default [
+  {
+    plugins: { jsdoc },
+    rules: {
+      'jsdoc/check-tag-names': ['warn', {
+        definedTags: ['note', 'internal'],
+        jsxTags: false,
+        typed: false,
+      }],
+    },
+  },
+];
+```
+
+For TypeScript projects with redundancy checking:
+
+```javascript
+export default [
+  {
+    plugins: { jsdoc },
+    rules: {
+      'jsdoc/check-tag-names': ['warn', {
+        typed: true,
+      }],
+    },
+    settings: {
+      jsdoc: {
+        mode: 'typescript',
+      },
+    },
+  },
+];
+```
+
+<Note>
+This rule is included in `jsdoc.configs['flat/recommended']` and reports at the `warn` level by default.
+</Note>
